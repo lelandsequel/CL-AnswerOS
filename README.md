@@ -1,4 +1,4 @@
-# 🧠 LelandOS - Unified LLM-Powered SEO/AEO Audit Platform
+# 🧠 C&L Answer OS - Unified LLM-Powered SEO/AEO Audit Platform
 
 **The HNIC of SEO/AEO tools** - A comprehensive multi-LLM platform for website audits, content generation, keyword research, and lead generation.
 

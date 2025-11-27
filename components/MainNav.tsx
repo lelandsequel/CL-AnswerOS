@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 const primaryLinks = [
   { label: 'Home', href: '/' },
   { label: 'Audit', href: '/audit' },
-  { label: 'Lelandize', href: '/lelandize' },
+  { label: 'Tone Adjust', href: '/tone-adjust' },
   { label: 'Keywords', href: '/keywords' },
   { label: 'Content', href: '/content' },
   { label: 'Press', href: '/press-release' },
@@ -35,11 +35,11 @@ export function MainNav() {
         {/* Brand */}
         <Link href="/" className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-500/10 ring-1 ring-sky-500/40">
-            <span className="text-xs font-semibold text-sky-300">L</span>
+            <span className="text-xs font-semibold text-sky-300">C&L</span>
           </div>
           <div className="flex flex-col leading-tight">
             <span className="text-sm font-semibold text-slate-50">
-              LelandOS
+              C&L Answer OS
             </span>
             <span className="text-[10px] uppercase tracking-wide text-slate-400">
               Audit · AEO · Client OS

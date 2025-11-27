@@ -1,5 +1,5 @@
 // app/api/lelandize/route.ts
-// Takes structuredAudit + context and returns a Lelandized report (board summary, whiteboard roast, moneyboard)
+// Takes structuredAudit + context and returns a generated report (board summary, whiteboard roast, moneyboard)
 
 import { NextRequest, NextResponse } from "next/server";
 import {

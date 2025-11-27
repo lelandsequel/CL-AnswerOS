@@ -6,8 +6,8 @@ import { MainNav } from '@/components/MainNav';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'LelandOS',
-  description: 'Internal audit + AEO OS by Leland',
+  title: 'C&L Answer OS',
+  description: 'Unified LLM-Powered SEO/AEO Audit Platform',
 };
 
 export default function RootLayout({

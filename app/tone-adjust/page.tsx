@@ -5,37 +5,37 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import Spinner from "@/components/Spinner";
 
-interface LelandizeResponse {
+interface ToneAdjustResponse {
   original: string;
-  lelandized: string;
+  adjusted: string;
   tone: string;
 }
 
-export default function LelandizePage() {
+export default function ToneAdjustPage() {
   const [text, setText] = useState("");
   const [sass, setSass] = useState(7);
   const [tone, setTone] = useState<"founder" | "analyst" | "pablo">("founder");
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<LelandizeResponse | null>(null);
+  const [result, setResult] = useState<ToneAdjustResponse | null>(null);
   const [error, setError] = useState("");
 
-  async function lelandize() {
+  async function toneAdjust() {
     try {
       setLoading(true);
       setError("");
       setResult(null);
 
-      const res = await fetch("/api/lelandize", {
+      const res = await fetch("/api/tone-adjust", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text, sass, tone }),
       });
 
-      if (!res.ok) throw new Error("Lelandize failed");
+      if (!res.ok) throw new Error("Tone adjustment failed");
       const data = await res.json();
       setResult(data);
     } catch (err: any) {
-      setError(err.message || "Failed to lelandize");
+      setError(err.message || "Failed to adjust tone");
     } finally {
       setLoading(false);
     }
@@ -45,10 +45,10 @@ export default function LelandizePage() {
     <div className="space-y-8">
       <Card>
         <h1 className="text-2xl sm:text-3xl font-bold text-[#0A84FF] mb-4">
-          Lelandizer
+          Tone Adjust
         </h1>
         <p className="text-xs sm:text-sm text-gray-400 mb-4">
-          Transform any text into Leland's voice. Pick your tone pack and sass
+          Transform any text with tone adjustment. Pick your tone pack and intensity
           level.
         </p>
         <div className="space-y-4">
@@ -81,7 +81,7 @@ export default function LelandizePage() {
             </div>
             <div>
               <div className="flex justify-between text-xs text-gray-400">
-                <span>Sass Level</span>
+                <span>Intensity Level</span>
                 <span>{sass}</span>
               </div>
               <input
@@ -94,8 +94,8 @@ export default function LelandizePage() {
               />
             </div>
           </div>
-          <Button onClick={lelandize} disabled={loading || !text}>
-            {loading ? "Lelandizing…" : "Transform"}
+          <Button onClick={toneAdjust} disabled={loading || !text}>
+            {loading ? "Adjusting…" : "Transform"}
           </Button>
           {error && (
             <div className="text-xs text-red-300 bg-red-900/30 border border-red-800 rounded-xl px-3 py-2 mt-2">
@@ -119,16 +119,16 @@ export default function LelandizePage() {
           </Card>
           <Card>
             <h2 className="text-sm font-semibold text-[#0A84FF] mb-2">
-              Lelandized ({result.tone})
+              Tone Adjusted ({result.tone})
             </h2>
             <p className="text-xs sm:text-sm text-gray-200 whitespace-pre-wrap">
-              {result.lelandized}
+              {result.adjusted}
             </p>
             <Button
               variant="ghost"
               className="mt-3 text-xs"
               onClick={() => {
-                navigator.clipboard.writeText(result.lelandized);
+                navigator.clipboard.writeText(result.adjusted);
               }}
             >
               Copy
@@ -139,4 +139,3 @@ export default function LelandizePage() {
     </div>
   );
 }
-

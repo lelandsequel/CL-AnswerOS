@@ -80,7 +80,7 @@ export default function DashboardPage() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold text-slate-50">
-              Welcome back to LelandOS
+              Welcome back to C&L Answer OS
             </h1>
             <p className="mt-1 max-w-xl text-sm text-slate-400">
               Audit, AEO, client assets and prospecting — all wired into one
@@ -109,7 +109,7 @@ export default function DashboardPage() {
         <QuickAction
           href="/audit"
           label="Run Site Audit"
-          description="Scan a site, generate a structured audit and Lelandized report."
+          description="Scan a site, generate a structured audit and detailed report."
         />
         <QuickAction
           href="/leads"
