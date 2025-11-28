@@ -4,7 +4,7 @@
 
 ## 🎯 Overview
 
-LelandOS is a Next.js 16.0.3 application that leverages multiple LLM providers (Anthropic, OpenAI, Google Gemini) with intelligent task-based routing, automatic fallbacks, and real-time data integration via DataForSEO APIs.
+LelandOS is a Next.js 15.5.6 application that leverages multiple LLM providers (Anthropic, OpenAI, Google Gemini) with intelligent task-based routing, automatic fallbacks, and real-time data integration via DataForSEO APIs.
 
 ### Key Features
 
@@ -23,19 +23,25 @@ LelandOS is a Next.js 16.0.3 application that leverages multiple LLM providers (
 Centralized LLM management with task-based routing:
 
 ```typescript
-// 12 predefined tasks with optimal model selection
-- audit_scan → Gemini 2.0 Flash
-- audit_analysis → Claude Sonnet (fallback: GPT-4.1 Instant)
-- lelandizer → GPT-4.1 Instant (fallback: Claude Haiku)
-- lead_scoring → Claude Sonnet (fallback: GPT-4.1 Instant)
-- content_press_release → Claude Sonnet
-- content_article → Claude Sonnet (fallback: GPT-4.1 Instant)
-- content_landing → Claude Sonnet (fallback: GPT-4.1 Instant)
-- content_social → Claude Haiku (fallback: GPT-4.1 Instant)
+// 19 predefined tasks with optimal model selection
+- audit_scan → Gemini 1.5 Flash
+- audit_analysis → Claude Sonnet (fallback: GPT-4o-mini)
+- lelandizer → GPT-4o-mini (fallback: Claude Sonnet)
+- lead_scoring → Claude Sonnet (fallback: GPT-4o-mini)
+- lead_light → GPT-4o-mini (fallback: Claude Haiku)
+- content_press_release → Claude Haiku
+- content_article → Claude Haiku (fallback: GPT-4o-mini)
+- content_landing → Claude Haiku (fallback: GPT-4o-mini)
+- content_social → Claude Haiku (fallback: GPT-4o-mini)
 - keyword_expand → Claude Haiku (fallback: Gemini)
-- keyword_suite → Gemini 2.0 Flash (fallback: Claude Sonnet)
-- utility_rewrite → GPT-4o-mini
-- utility_json_fix → GPT-4o-mini
+- keyword_suite → Gemini 1.5 Flash (fallback: Claude Sonnet)
+- utility_rewrite → GPT-4o-mini (fallback: Claude Haiku)
+- utility_json_fix → GPT-4o-mini (fallback: Claude Haiku)
+- sales_pitch_deck → Claude Sonnet (fallback: GPT-4o-mini)
+- sales_proposal → Claude Sonnet (fallback: GPT-4o-mini)
+- sales_roi_calc → Claude Haiku (fallback: GPT-4o-mini)
+- sales_outreach → Claude Haiku (fallback: GPT-4o-mini)
+- sales_emails → Claude Haiku (fallback: GPT-4o-mini)
 ```
 
 ### API Routes
@@ -144,17 +150,41 @@ lelandos/
 
 ## 🔌 API Integration
 
+### LLM Providers
+
+**Multi-Provider Architecture with Intelligent Fallbacks:**
+
+- **Anthropic Claude** - Primary for audit analysis, content generation, lead scoring
+  - Claude Sonnet: Complex analysis and content creation
+  - Claude Haiku: Lightweight tasks and keyword expansion
+  
+- **OpenAI GPT** - Fallback and specialized tasks
+  - GPT-4.1 Instant: Audit analysis, content generation fallback
+  - GPT-4o-mini: Utility tasks (JSON fixing, rewriting)
+  
+- **Google Gemini** - Specialized for scanning and keyword research
+  - Gemini 2.0 Flash: Website scanning and keyword suite analysis
+  - Fallback support for keyword expansion
+
+**Features:**
+- Task-based model selection for optimal performance
+- Automatic provider fallbacks on failure
+- Configurable temperature and parameters per task
+- Consistent error handling across all providers
+
 ### DataForSEO
 
 - **Website Scan:** Raw HTML analysis for SEO metrics
 - **Business Listings:** Real business data for lead generation
 - **Keyword Metrics:** Search volume, difficulty, trends
+- **Keyword Ideas:** Seed expansion and related keywords
 
 ### Supabase
 
 - Audit history storage
-- User preferences
+- User preferences and settings
 - Real-time updates
+- Asset and client data persistence
 
 ## 🧪 Testing
 
