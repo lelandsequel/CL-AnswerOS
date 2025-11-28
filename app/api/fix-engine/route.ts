@@ -34,9 +34,14 @@ type FixPack = {
   notesForClient: string;
 };
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+function getOpenAI() {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error("Missing OPENAI_API_KEY environment variable");
+  }
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+}
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
@@ -47,6 +52,7 @@ const supabase =
     : null;
 
 async function callLLM(audit: string, url: string): Promise<FixPack> {
+  const openai = getOpenAI();
   const systemPrompt = `
 You are "Leland OS – Fix Engine", an elite technical SEO + content strategist with 10+ years implementing fixes that actually move the needle.
 

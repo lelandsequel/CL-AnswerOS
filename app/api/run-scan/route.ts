@@ -1,15 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, GenerativeModel } from "@google/generative-ai";
 
-const apiKey = process.env.GEMINI_API_KEY;
+// Lazy initialization to avoid build-time errors
+let _model: GenerativeModel | null = null;
 
-if (!apiKey) {
-  throw new Error("GEMINI_API_KEY env variable not set");
+function getModel(): GenerativeModel {
+  if (_model) return _model;
+  
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY or GOOGLE_API_KEY env variable not set");
+  }
+  
+  const genAI = new GoogleGenerativeAI(apiKey);
+  _model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+  return _model;
 }
-
-// Initialize Gemini 2.0 Flash (latest available)
-const genAI = new GoogleGenerativeAI(apiKey);
-const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
 type ScanMode = "C" | "D"; // C = Balanced, D = Spicy / Unhinged
 
@@ -172,7 +178,7 @@ export async function POST(req: NextRequest) {
 
     const prompt = buildRawScanPrompt(url, mode);
 
-    const result = await model.generateContent({
+    const result = await getModel().generateContent({
       contents: [
         {
           role: "user",
@@ -184,9 +190,10 @@ export async function POST(req: NextRequest) {
     const text = result.response.text();
 
     return new NextResponse(text, { status: 200 });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("run-scan error:", err);
-    return new NextResponse("Failed to run scan: " + err?.message, {
+    const errMessage = err instanceof Error ? err.message : String(err);
+    return new NextResponse("Failed to run scan: " + errMessage, {
       status: 500,
     });
   }

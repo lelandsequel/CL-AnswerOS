@@ -3,22 +3,11 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-const primaryLinks = [
+// MVP Navigation - focused on audit workflow
+const navLinks = [
   { label: 'Home', href: '/' },
   { label: 'Audit', href: '/audit' },
-  { label: 'Tone Adjust', href: '/tone-adjust' },
-  { label: 'Keywords', href: '/keywords' },
-  { label: 'Content', href: '/content' },
-  { label: 'Press', href: '/press-release' },
-  { label: 'Leads', href: '/leads' },
-  { label: 'Assets', href: '/assets' },
-];
-
-const secondaryLinks = [
-  { label: 'Clients', href: '/clients' },
-  { label: 'Sales', href: '/sales' },
-  { label: 'Saved', href: '/saved' },
-  { label: 'Fix Engine', href: '/fix' },
+  { label: 'Audit History', href: '/saved' },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -42,14 +31,14 @@ export function MainNav() {
               C&L Answer OS
             </span>
             <span className="text-[10px] uppercase tracking-wide text-slate-400">
-              Audit · AEO · Client OS
+              Agency Audit Tool
             </span>
           </div>
         </Link>
 
-        {/* Primary nav */}
-        <nav className="hidden items-center gap-1 md:flex">
-          {primaryLinks.map((link) => {
+        {/* Navigation */}
+        <nav className="flex items-center gap-1">
+          {navLinks.map((link) => {
             const active = isActive(pathname, link.href);
             return (
               <Link
@@ -67,50 +56,6 @@ export function MainNav() {
             );
           })}
         </nav>
-
-        {/* Secondary / right side */}
-        <div className="flex items-center gap-2">
-          <nav className="hidden items-center gap-1 lg:flex">
-            {secondaryLinks.map((link) => {
-              const active = isActive(pathname, link.href);
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={[
-                    'rounded-full px-3 py-1.5 text-[11px] font-medium transition-colors',
-                    active
-                      ? 'bg-slate-800 text-slate-50'
-                      : 'text-slate-400 hover:bg-slate-900 hover:text-slate-100',
-                  ].join(' ')}
-                >
-                  {link.label}
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* Mobile condensed nav */}
-          <nav className="flex items-center gap-1 md:hidden">
-            {primaryLinks.slice(0, 3).map((link) => {
-              const active = isActive(pathname, link.href);
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={[
-                    'rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors',
-                    active
-                      ? 'bg-sky-500/20 text-sky-200 ring-1 ring-sky-500/60'
-                      : 'text-slate-300 hover:bg-slate-900 hover:text-slate-50',
-                  ].join(' ')}
-                >
-                  {link.label}
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
       </div>
     </header>
   );

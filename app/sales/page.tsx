@@ -98,7 +98,7 @@ export default function SalesPage() {
                 </label>
                 <Input
                   value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCompanyName(e.target.value)}
                   placeholder="Client company name"
                 />
               </div>
@@ -108,7 +108,7 @@ export default function SalesPage() {
                 </label>
                 <Input
                   value={industry}
-                  onChange={(e) => setIndustry(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setIndustry(e.target.value)}
                   placeholder="e.g. SaaS, E-commerce, Healthcare"
                 />
               </div>
@@ -120,7 +120,7 @@ export default function SalesPage() {
               </label>
               <Input
                 value={services}
-                onChange={(e) => setServices(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setServices(e.target.value)}
                 placeholder="SEO audit, content strategy, technical fixes, etc."
               />
             </div>
@@ -134,7 +134,7 @@ export default function SalesPage() {
                   </label>
                   <Input
                     value={budget}
-                    onChange={(e) => setBudget(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBudget(e.target.value)}
                     placeholder="$10k - $25k"
                   />
                 </div>
@@ -144,7 +144,7 @@ export default function SalesPage() {
                   </label>
                   <Input
                     value={timeline}
-                    onChange={(e) => setTimeline(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTimeline(e.target.value)}
                     placeholder="3 months, 6 months, etc."
                   />
                 </div>
@@ -159,7 +159,7 @@ export default function SalesPage() {
                   </label>
                   <Input
                     value={budget}
-                    onChange={(e) => setBudget(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBudget(e.target.value)}
                     placeholder="e.g. 5,000 visitors/month"
                   />
                 </div>
@@ -169,7 +169,7 @@ export default function SalesPage() {
                   </label>
                   <Input
                     value={timeline}
-                    onChange={(e) => setTimeline(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTimeline(e.target.value)}
                     placeholder="e.g. 200% increase"
                   />
                 </div>
@@ -183,7 +183,7 @@ export default function SalesPage() {
               <Textarea
                 rows={3}
                 value={painPoints}
-                onChange={(e) => setPainPoints(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setPainPoints(e.target.value)}
                 placeholder={
                   mode === "pitch_deck"
                     ? "Low website traffic, poor conversion rates, competitors ranking higher..."
