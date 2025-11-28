@@ -3,282 +3,171 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import Spinner from '@/components/Spinner';
+import type { AuditRecord } from '@/lib/types';
 
-type ClientAsset = {
-  id: string;
-  client_id: string | null;
-  type: string | null;
-  title: string | null;
-  summary: string | null;
-  tags: string[] | null;
-  created_at: string | null;
-};
+export default function HomePage() {
+  const [url, setUrl] = useState('');
+  const [clientName, setClientName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-type AssetsResponse =
-  | {
-      data: ClientAsset[];
-    }
-  | {
-      error: string;
-    };
-
-export default function DashboardPage() {
-  const [assets, setAssets] = useState<ClientAsset[]>([]);
-  const [assetsError, setAssetsError] = useState<string | null>(null);
-  const [loadingAssets, setLoadingAssets] = useState(false);
+  // Recent audits
+  const [recentAudits, setRecentAudits] = useState<AuditRecord[]>([]);
+  const [loadingAudits, setLoadingAudits] = useState(false);
 
   useEffect(() => {
-    const fetchAssets = async () => {
-      try {
-        setLoadingAssets(true);
-        setAssetsError(null);
-
-        const res = await fetch('/api/client-assets', {
-          method: 'GET',
-        });
-
-        const json = (await res.json()) as AssetsResponse;
-
-        if (!res.ok || 'error' in json) {
-          throw new Error(
-            'error' in json ? json.error : 'Failed to load assets',
-          );
-        }
-
-        const data = json.data || [];
-        // newest first, top 5
-        const sorted = data
-          .slice()
-          .sort((a, b) => {
-            const ta = a.created_at ? Date.parse(a.created_at) : 0;
-            const tb = b.created_at ? Date.parse(b.created_at) : 0;
-            return tb - ta;
-          })
-          .slice(0, 5);
-
-        setAssets(sorted);
-      } catch (err: any) {
-        console.error('Dashboard assets error:', err);
-        setAssetsError(
-          err?.message || 'Unable to load recent assets right now.',
-        );
-      } finally {
-        setLoadingAssets(false);
-      }
-    };
-
-    fetchAssets();
+    loadRecentAudits();
   }, []);
 
-  const totalAssets = assets.length;
-  const hasAssets = totalAssets > 0;
+  async function loadRecentAudits() {
+    try {
+      setLoadingAudits(true);
+      const res = await fetch('/api/audits');
+      if (res.ok) {
+        const data = await res.json();
+        // Get most recent 5 audits
+        const audits = (data.audits || []).slice(0, 5);
+        setRecentAudits(audits);
+      }
+    } catch (err) {
+      console.error('Failed to load recent audits:', err);
+    } finally {
+      setLoadingAudits(false);
+    }
+  }
+
+  async function runAudit() {
+    if (!url.trim()) return;
+    
+    try {
+      setLoading(true);
+      setError('');
+
+      // Redirect to audit page with URL param
+      const params = new URLSearchParams({ url: url.trim() });
+      if (clientName.trim()) {
+        params.append('clientName', clientName.trim());
+      }
+      window.location.href = `/audit?${params.toString()}`;
+    } catch (err: unknown) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : 'Something went wrong');
+      setLoading(false);
+    }
+  }
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 py-8">
-      {/* Top welcome / summary */}
-      <section className="rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-950 via-slate-950/95 to-slate-900/90 p-6 shadow-lg shadow-black/40">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+    <main className="mx-auto flex w-full max-w-4xl flex-col gap-8 py-8">
+      {/* Hero Section */}
+      <section className="text-center">
+        <h1 className="text-3xl sm:text-4xl font-bold text-slate-50 mb-4">
+          C&L Answer OS
+        </h1>
+        <p className="text-lg text-slate-400 max-w-2xl mx-auto">
+          Audit a website, get a client-ready report.
+        </p>
+      </section>
+
+      {/* Main Audit Form */}
+      <Card className="p-6">
+        <div className="space-y-4">
           <div>
-            <h1 className="text-2xl font-semibold text-slate-50">
-              Welcome back to C&L Answer OS
-            </h1>
-            <p className="mt-1 max-w-xl text-sm text-slate-400">
-              Audit, AEO, client assets and prospecting — all wired into one
-              control panel. Pick up where you left off or spin up something
-              new.
-            </p>
+            <label className="text-sm text-slate-400 block mb-2">
+              Website URL
+            </label>
+            <Input
+              value={url}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUrl(e.target.value)}
+              placeholder="https://example.com"
+              className="text-base"
+            />
           </div>
-          <div className="flex flex-col items-end gap-2 text-right text-xs text-slate-400">
-            <span className="text-[11px] uppercase tracking-wide text-slate-500">
-              Snapshot
-            </span>
-            <div className="flex flex-wrap items-center gap-3 text-xs">
-              <span className="rounded-full border border-slate-700 bg-slate-900/80 px-3 py-1 text-slate-200">
-                Assets: <span className="font-semibold">{totalAssets}</span>
-              </span>
-              <span className="rounded-full border border-slate-700 bg-slate-900/80 px-3 py-1 text-slate-200">
-                Modules: <span className="font-semibold">Audit · AEO · Leads</span>
-              </span>
+
+          <div>
+            <label className="text-sm text-slate-400 block mb-2">
+              Client Name (optional)
+            </label>
+            <Input
+              value={clientName}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setClientName(e.target.value)}
+              placeholder="Acme Corp"
+              className="text-base"
+            />
+          </div>
+
+          <Button
+            className="w-full text-base py-3"
+            onClick={runAudit}
+            disabled={loading || !url.trim()}
+          >
+            {loading ? 'Starting Audit...' : 'Run Audit'}
+          </Button>
+
+          {error && (
+            <div className="text-sm text-red-300 bg-red-900/30 border border-red-800 rounded-xl px-4 py-3">
+              {error}
             </div>
-          </div>
+          )}
         </div>
-      </section>
+      </Card>
 
-      {/* Quick actions */}
-      <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <QuickAction
-          href="/audit"
-          label="Run Site Audit"
-          description="Scan a site, generate a structured audit and detailed report."
-        />
-        <QuickAction
-          href="/leads"
-          label="Prospect Leads"
-          description="Use DataForSEO to pull lead lists by niche + city."
-        />
-        <QuickAction
-          href="/assets"
-          label="View Asset Library"
-          description="See all saved audits, reports, lead lists and more."
-        />
-        <QuickAction
-          href="/clients"
-          label="Manage Clients"
-          description="Jump into client profiles and their asset libraries."
-        />
-      </section>
+      {/* Recent Audits */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-slate-50">
+            Recent Audits
+          </h2>
+          <Link
+            href="/saved"
+            className="text-sm text-sky-400 hover:text-sky-300"
+          >
+            View all →
+          </Link>
+        </div>
 
-      {/* Two-column lower section */}
-      <section className="grid gap-6 lg:grid-cols-[2fr_1.2fr]">
-        {/* Recent assets */}
-        <div className="rounded-3xl border border-slate-800 bg-slate-950/90 p-6 shadow-lg shadow-black/40">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div>
-              <h2 className="text-sm font-semibold text-slate-50">
-                Recent Assets
-              </h2>
-              <p className="text-xs text-slate-400">
-                Latest audits, reports, lead lists and other saved outputs.
-              </p>
-            </div>
-            <Link
-              href="/assets"
-              className="text-xs font-medium text-sky-300 hover:text-sky-200"
-            >
-              View all →
-            </Link>
-          </div>
+        {loadingAudits && <Spinner />}
 
-          {loadingAssets && (
-            <p className="py-4 text-xs text-slate-400">
-              Loading recent assets…
+        {!loadingAudits && recentAudits.length === 0 && (
+          <Card className="p-4">
+            <p className="text-sm text-slate-400">
+              No audits yet. Run your first audit above to get started.
             </p>
-          )}
+          </Card>
+        )}
 
-          {assetsError && !loadingAssets && (
-            <p className="rounded-2xl border border-red-800/70 bg-red-950/70 px-3 py-2 text-xs text-red-100">
-              {assetsError}
-            </p>
-          )}
-
-          {!loadingAssets && !assetsError && !hasAssets && (
-            <p className="py-4 text-xs text-slate-500">
-              No assets yet. Run an audit, generate content, or save a lead list
-              to see it appear here.
-            </p>
-          )}
-
-          {!loadingAssets && !assetsError && hasAssets && (
-            <ul className="divide-y divide-slate-800 text-xs">
-              {assets.map((asset) => (
-                <li
-                  key={asset.id}
-                  className="flex items-start justify-between gap-3 py-3"
-                >
-                  <div className="flex flex-col gap-1">
-                    <Link
-                      href={`/assets/${asset.id}`}
-                      className="font-medium text-sky-300 hover:text-sky-200"
-                    >
-                      {asset.title || 'Untitled'}
-                    </Link>
-                    <p className="text-slate-400">
-                      {asset.summary || 'No description'}
-                    </p>
-                    {asset.tags && asset.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 pt-1">
-                        {asset.tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] text-slate-300"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
+        {!loadingAudits && recentAudits.length > 0 && (
+          <div className="space-y-3">
+            {recentAudits.map((audit) => (
+              <Card key={audit.id} className="p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-slate-100 truncate">
+                      {audit.domain || audit.url}
+                    </div>
+                    <div className="text-xs text-slate-400 mt-1 truncate">
+                      {audit.summary || 'Audit completed'}
+                    </div>
                   </div>
-                  <span className="whitespace-nowrap rounded-full bg-slate-900 px-2 py-1 text-[10px] text-slate-400">
-                    {asset.type || 'asset'}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        {/* Right sidebar: Quick stats */}
-        <div className="flex flex-col gap-4">
-          {/* Stats card */}
-          <div className="rounded-3xl border border-slate-800 bg-slate-950/90 p-6 shadow-lg shadow-black/40">
-            <h3 className="mb-4 text-sm font-semibold text-slate-50">
-              Quick Stats
-            </h3>
-            <div className="space-y-3 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-400">Total Assets</span>
-                <span className="font-semibold text-sky-300">{totalAssets}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-400">Active Modules</span>
-                <span className="font-semibold text-sky-300">6</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-400">Status</span>
-                <span className="rounded-full bg-green-900/40 px-2 py-1 text-green-300">
-                  Ready
-                </span>
-              </div>
-            </div>
+                  <div className="flex items-center gap-3">
+                    {audit.opportunityRating && (
+                      <span className="text-xs px-2 py-1 rounded-full bg-sky-500/20 text-sky-300">
+                        {audit.opportunityRating}
+                      </span>
+                    )}
+                    <span className="text-xs text-slate-500">
+                      {new Date(audit.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+              </Card>
+            ))}
           </div>
-
-          {/* Help card */}
-          <div className="rounded-3xl border border-slate-800 bg-slate-950/90 p-6 shadow-lg shadow-black/40">
-            <h3 className="mb-3 text-sm font-semibold text-slate-50">
-              Getting Started
-            </h3>
-            <ul className="space-y-2 text-xs text-slate-400">
-              <li>
-                <Link href="/audit" className="text-sky-300 hover:text-sky-200">
-                  → Run your first audit
-                </Link>
-              </li>
-              <li>
-                <Link href="/leads" className="text-sky-300 hover:text-sky-200">
-                  → Pull a lead list
-                </Link>
-              </li>
-              <li>
-                <Link href="/assets" className="text-sky-300 hover:text-sky-200">
-                  → Browse saved assets
-                </Link>
-              </li>
-            </ul>
-          </div>
-        </div>
+        )}
       </section>
     </main>
-  );
-}
-
-function QuickAction({
-  href,
-  label,
-  description,
-}: {
-  href: string;
-  label: string;
-  description: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className="group rounded-2xl border border-slate-800 bg-slate-950/60 p-4 transition-all hover:border-slate-700 hover:bg-slate-900/80"
-    >
-      <h3 className="font-semibold text-slate-50 group-hover:text-sky-300">
-        {label}
-      </h3>
-      <p className="mt-1 text-xs text-slate-400">{description}</p>
-    </Link>
   );
 }
