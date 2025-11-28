@@ -9,14 +9,27 @@ interface AssetCardProps {
   showClient?: boolean;
 }
 
-export function AssetCard({ asset, showClient }: AssetCardProps) {
-  const Icon = getIconForType(asset.type);
+export function AssetCard({ asset }: AssetCardProps) {
+  // Render icon based on type directly to avoid component creation during render
+  const renderIcon = () => {
+    const iconProps = { size: 20 };
+    switch (asset.type) {
+      case "audit":
+        return <BarChart2 {...iconProps} />;
+      case "lelandized_report":
+        return <FileText {...iconProps} />;
+      case "keyword_research":
+        return <Globe {...iconProps} />;
+      default:
+        return <File {...iconProps} />;
+    }
+  };
 
   return (
     <Card className="p-4 hover:bg-white/5 transition-colors cursor-pointer group">
       <div className="flex items-start justify-between gap-3">
         <div className="p-2 rounded-lg bg-white/5 text-[#0A84FF] group-hover:bg-[#0A84FF]/10 group-hover:text-[#0A84FF]">
-          <Icon size={20} />
+          {renderIcon()}
         </div>
         <div className="text-[10px] text-gray-500">
           {new Date(asset.createdAt).toLocaleDateString()}
@@ -44,17 +57,4 @@ export function AssetCard({ asset, showClient }: AssetCardProps) {
       </div>
     </Card>
   );
-}
-
-function getIconForType(type: string) {
-  switch (type) {
-    case "audit":
-      return BarChart2;
-    case "lelandized_report":
-      return FileText;
-    case "keyword_research":
-      return Globe;
-    default:
-      return File;
-  }
 }
