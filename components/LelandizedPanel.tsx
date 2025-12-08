@@ -1,21 +1,21 @@
-// components/LelandizedPanel.tsx
+// components/OperatorReportPanel.tsx
 
 "use client";
 
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import type { LelandizedReport } from "@/lib/types";
+import type { OperatorReport } from "@/lib/types";
 
 interface Props {
-  report: LelandizedReport;
+  report: OperatorReport;
   url: string;
   clientName?: string;
 }
 
 type TabKey = "board" | "roast" | "money";
 
-export function LelandizedPanel({
+export function OperatorReportPanel({
   report,
   url,
   clientName,
@@ -71,10 +71,10 @@ export function LelandizedPanel({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
         <div>
           <h2 className="text-lg font-semibold text-[#0A84FF]">
-            Lelandized Report
+            Operator Report
           </h2>
           <p className="text-[11px] text-gray-400">
-            Pablo-tier translation of your audit into board
+            Operator-grade translation of your audit into board
             narrative, whiteboard ammo, and a money roadmap.
           </p>
           {report.subjectLine && (

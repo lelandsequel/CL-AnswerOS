@@ -277,17 +277,17 @@ export interface AuditRecord {
 }
 
 // ======================================================================
-// LELANDIZER / REPORT GENERATION TYPES
+// REPORT GENERATION TYPES
 // ======================================================================
 
-export interface LelandizedReport {
+export interface OperatorReport {
   boardSummary: string;
   whiteboardRoast: string;
   moneyboard: string;
   subjectLine?: string;
 }
 
-export interface LelandizeRequestBody {
+export interface GenerateReportRequestBody {
   url: string;
   clientName?: string;
   structuredAudit: any;
@@ -296,10 +296,10 @@ export interface LelandizeRequestBody {
   chaosLevel?: number; // 1–10
 }
 
-export interface LelandizeResponseBody {
+export interface GenerateReportResponseBody {
   url: string;
   clientName?: string;
-  report: LelandizedReport;
+  report: OperatorReport;
 }
 
 // ======================================================================

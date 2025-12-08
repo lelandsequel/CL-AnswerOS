@@ -8,9 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import Spinner from "@/components/Spinner";
-import { LelandizedPanel } from "@/components/LelandizedPanel";
+import { OperatorReportPanel } from "@/components/LelandizedPanel";
 import { SaveAssetButton } from "@/components/assets";
-import type { Client, LelandizedReport } from "@/lib/types";
+import type { Client, OperatorReport } from "@/lib/types";
 
 interface AuditResultPayload {
   url: string;
@@ -50,11 +50,11 @@ export default function AuditPage() {
     useState<string | null>(null);
   const [autoSaved, setAutoSaved] = useState(false);
 
-  // Lelandizer
-  const [lelandizing, setLelandizing] = useState(false);
-  const [lelandizeError, setLelandizeError] = useState("");
-  const [lelandized, setLelandized] =
-    useState<LelandizedReport | null>(null);
+  // Report Generator
+  const [generatingReport, setGeneratingReport] = useState(false);
+  const [reportError, setReportError] = useState("");
+  const [generatedReport, setGeneratedReport] =
+    useState<OperatorReport | null>(null);
 
   // Load clients on mount
   useEffect(() => {
@@ -393,12 +393,12 @@ export default function AuditPage() {
     }
   }
 
-  async function runLelandizer() {
+  async function generateReport() {
     if (!auditResult || !auditResult.structuredAudit) return;
     try {
-      setLelandizing(true);
-      setLelandizeError("");
-      setLelandized(null);
+      setGeneratingReport(true);
+      setReportError("");
+      setGeneratedReport(null);
 
       const res = await fetch("/api/lelandize", {
         method: "POST",
@@ -416,7 +416,7 @@ export default function AuditPage() {
       const text = await res.text();
       if (!res.ok) {
         throw new Error(
-          text || "Lelandizer request failed"
+          text || "Report generation request failed"
         );
       }
 
@@ -425,24 +425,24 @@ export default function AuditPage() {
         data = JSON.parse(text);
       } catch (err) {
         console.error(
-          "Failed to parse lelandize JSON:",
+          "Failed to parse report JSON:",
           err,
           text
         );
         throw new Error(
-          "Could not parse Lelandizer response"
+          "Could not parse report response"
         );
       }
 
-      setLelandized(data.report || null);
+      setGeneratedReport(data.report || null);
     } catch (err: any) {
       console.error(err);
-      setLelandizeError(
+      setReportError(
         err?.message ||
-          "Failed to generate Lelandized report"
+          "Failed to generate report"
       );
     } finally {
-      setLelandizing(false);
+      setGeneratingReport(false);
     }
   }
 
@@ -839,9 +839,9 @@ export default function AuditPage() {
               </div>
             )}
 
-            {lelandizeError && (
+            {reportError && (
               <div className="text-xs text-red-300 bg-red-900/30 border border-red-800 rounded-xl px-3 py-2 whitespace-pre-wrap mt-2">
-                {lelandizeError}
+                {reportError}
               </div>
             )}
 
@@ -866,12 +866,12 @@ export default function AuditPage() {
 
                 <Button
                   variant="outline"
-                  disabled={lelandizing}
-                  onClick={runLelandizer}
+                  disabled={generatingReport}
+                  onClick={generateReport}
                 >
-                  {lelandizing
-                    ? "Lelandizing…"
-                    : "Lelandize this Audit"}
+                  {generatingReport
+                    ? "Generating…"
+                    : "Generate Report"}
                 </Button>
 
                 <a
@@ -906,6 +906,14 @@ export default function AuditPage() {
                   <Card>
                     {renderStructuredOverview()}
                   </Card>
+
+                  {generatedReport && (
+                    <OperatorReportPanel
+                      report={generatedReport}
+                      url={auditResult.url}
+                      clientName={selectedClient?.name}
+                    />
+                  )}
 
                   <div className="flex flex-col sm:flex-row gap-2">
                     <SaveAssetButton

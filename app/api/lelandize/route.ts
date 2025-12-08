@@ -3,8 +3,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import {
-  LelandizeRequestBody,
-  LelandizeResponseBody,
+  GenerateReportRequestBody,
+  GenerateReportResponseBody,
 } from "@/lib/types";
 import {
   callLLMTask,
@@ -13,13 +13,13 @@ import {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = (await req.json()) as LelandizeRequestBody;
+    const body = (await req.json()) as GenerateReportRequestBody;
 
     if (!body || !body.structuredAudit || !body.url) {
       return NextResponse.json(
         {
           error:
-            "url and structuredAudit are required for Lelandizer",
+            "url and structuredAudit are required for report generation",
         },
         { status: 400 }
       );
@@ -131,7 +131,7 @@ Where:
       );
     }
 
-    const report: LelandizeResponseBody = {
+    const report: GenerateReportResponseBody = {
       url,
       clientName,
       report: {
