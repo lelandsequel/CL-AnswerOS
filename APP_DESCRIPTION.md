@@ -27,7 +27,7 @@ Think of it as your **all-in-one control panel** for SEO strategy, content ops, 
 - **Client integration** — auto-save audits to client profiles
 - **Lelandizer integration** — transform audit into three operator-grade reports
 
-### 2. **Lelandizer** (Integrated in Audit)
+### 2. **Report Generator** (Integrated in Audit)
 Transform structured audits into three distinct deliverables:
 - **Board Summary** — Investor/board-ready narrative (4-7 paragraphs, operator language)
 - **Whiteboard Roast** — War-room critique (bullet-heavy, brutally honest)
@@ -80,7 +80,7 @@ Transform structured audits into three distinct deliverables:
 |------|---------|----------|
 | audit_scan | Gemini 2.0 Flash | — |
 | audit_analysis | Claude Sonnet | GPT-4o-mini |
-| lelandizer | GPT-4o-mini | Claude Sonnet |
+| report_generator | GPT-4o-mini | Claude Sonnet |
 | lead_scoring | Claude Sonnet | GPT-4o-mini |
 | keyword_suite | Gemini 2.0 Flash | Claude Sonnet |
 | content_* | Claude Haiku | GPT-4o-mini |
@@ -97,7 +97,7 @@ Transform structured audits into three distinct deliverables:
 | Route | Purpose | LLM Task |
 |-------|---------|----------|
 | `POST /api/run-audit` | Website audit analysis | audit_analysis |
-| `POST /api/lelandize` | Transform audit to reports | lelandizer |
+| `POST /api/lelandize` | Transform audit to operator reports | report_generator |
 | `POST /api/keywords` | Keyword research & clustering | keyword_suite |
 | `POST /api/lead-generator` | Business lead discovery | lead_scoring |
 | `POST /api/content/generate` | Multi-format content | content_* |

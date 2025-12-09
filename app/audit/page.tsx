@@ -55,6 +55,8 @@ export default function AuditPage() {
   const [reportError, setReportError] = useState("");
   const [generatedReport, setGeneratedReport] =
     useState<OperatorReport | null>(null);
+  const [reportPreview, setReportPreview] = useState<string>("");
+  const [showReportPreview, setShowReportPreview] = useState(false);
 
   // Load clients on mount
   useEffect(() => {
@@ -443,6 +445,53 @@ export default function AuditPage() {
       );
     } finally {
       setGeneratingReport(false);
+    }
+  }
+
+  async function downloadReport(format: "txt" | "md") {
+    if (!auditResult || !generatedReport) return;
+    try {
+      const res = await fetch("/api/export-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: auditResult.url,
+          domain: auditResult.url
+            .replace(/^https?:\/\//, "")
+            .split("/")[0]
+            .replace(/^www\./, ""),
+          clientName: selectedClient?.name,
+          rawScore: auditResult.structuredAudit?.overview?.raw_score,
+          opportunityRating: auditResult.structuredAudit?.overview?.opportunity_rating,
+          structuredAudit: auditResult.structuredAudit,
+          operatorReport: generatedReport,
+          format,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to generate report");
+      }
+
+      const text = await res.text();
+
+      // Show preview
+      setReportPreview(text);
+      setShowReportPreview(true);
+
+      // Download file
+      const blob = new Blob([text], { type: format === "md" ? "text/markdown" : "text/plain" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `audit-report-${Date.now()}.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err: any) {
+      console.error("Download failed:", err);
+      alert("Failed to download report: " + (err?.message || "Unknown error"));
     }
   }
 
@@ -961,24 +1010,65 @@ export default function AuditPage() {
                       clientName={selectedClient?.name}
                     />
 
-                    <SaveAssetButton
-                      label="Save Operator Report"
-                      clientId={selectedClientId || null}
-                      type="operator_report"
-                      title={
-                        auditResult.url
-                          ? `Operator Report – ${auditResult.url}`
-                          : "Operator Audit Report"
-                      }
-                      summary={
-                        generatedReport.boardSummary?.slice(
-                          0,
-                          220
-                        ) || "Operator report"
-                      }
-                      payload={generatedReport}
-                      tags={["report_generator", "report"]}
-                    />
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <SaveAssetButton
+                        label="Save Operator Report"
+                        clientId={selectedClientId || null}
+                        type="operator_report"
+                        title={
+                          auditResult.url
+                            ? `Operator Report – ${auditResult.url}`
+                            : "Operator Audit Report"
+                        }
+                        summary={
+                          generatedReport.boardSummary?.slice(
+                            0,
+                            220
+                          ) || "Operator report"
+                        }
+                        payload={generatedReport}
+                        tags={["report_generator", "report"]}
+                      />
+
+                      <Button
+                        variant="outline"
+                        onClick={() => downloadReport("txt")}
+                        className="text-xs"
+                      >
+                        Download Report (TXT)
+                      </Button>
+
+                      <Button
+                        variant="outline"
+                        onClick={() => downloadReport("md")}
+                        className="text-xs"
+                      >
+                        Download Report (MD)
+                      </Button>
+                    </div>
+
+                    {showReportPreview && reportPreview && (
+                      <Card className="bg-slate-900 border-slate-700">
+                        <div className="p-4">
+                          <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-semibold text-white">
+                              Full Report Preview
+                            </h3>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setShowReportPreview(false)}
+                              className="text-slate-400 hover:text-white"
+                            >
+                              ✕
+                            </Button>
+                          </div>
+                          <pre className="bg-slate-950 p-4 rounded text-xs text-slate-200 overflow-auto max-h-96 whitespace-pre-wrap break-words font-mono">
+                            {reportPreview}
+                          </pre>
+                        </div>
+                      </Card>
+                    )}
                   </div>
                 )}
 
