@@ -953,31 +953,31 @@ export default function AuditPage() {
                   </div>
                 </div>
 
-                {lelandized && (
+                {generatedReport && (
                   <div className="flex flex-col gap-3">
-                    <LelandizedPanel
-                      report={lelandized}
+                    <OperatorReportPanel
+                      report={generatedReport}
                       url={auditResult.url}
                       clientName={selectedClient?.name}
                     />
 
                     <SaveAssetButton
-                      label="Save Lelandized Report"
+                      label="Save Operator Report"
                       clientId={selectedClientId || null}
-                      type="lelandized_report"
+                      type="operator_report"
                       title={
                         auditResult.url
-                          ? `Lelandized Report – ${auditResult.url}`
-                          : "Lelandized Audit Report"
+                          ? `Operator Report – ${auditResult.url}`
+                          : "Operator Audit Report"
                       }
                       summary={
-                        lelandized.boardSummary?.slice(
+                        generatedReport.boardSummary?.slice(
                           0,
                           220
-                        ) || "Lelandized report"
+                        ) || "Operator report"
                       }
-                      payload={lelandized}
-                      tags={["lelandizer", "report"]}
+                      payload={generatedReport}
+                      tags={["report_generator", "report"]}
                     />
                   </div>
                 )}
