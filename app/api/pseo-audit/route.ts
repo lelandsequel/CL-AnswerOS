@@ -1,44 +1,17 @@
-// app/api/pseo-audit/route.ts
-// pSEO audit API endpoint
+import { NextResponse } from "next/server";
+import { PseoAuditRequestSchema } from "@/lib/pseo-types";
+import { generatePseoAudit } from "@/lib/pseo-audit";
 
-import { NextRequest, NextResponse } from "next/server";
-import { PSEOAuditRequestSchema } from "@/lib/pseo-types";
-import { generatePSEOAudit } from "@/lib/pseo-audit";
-
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const body = await req.json();
-
-    // Validate request
-    const validation = PSEOAuditRequestSchema.safeParse(body);
-    if (!validation.success) {
-      return NextResponse.json(
-        {
-          error: "Validation failed",
-          details: validation.error.flatten(),
-        },
-        { status: 400 }
-      );
-    }
-
-    const request = validation.data;
-
-    // Generate pSEO audit
-    const result = await generatePSEOAudit(request);
-
-    return NextResponse.json({
-      success: true,
-      data: result,
-    });
-  } catch (error) {
-    console.error("[pseo-audit] Error:", error);
+    const json = await req.json();
+    const parsed = PseoAuditRequestSchema.parse(json);
+    const result = generatePseoAudit(parsed);
+    return NextResponse.json(result);
+  } catch (e: any) {
     return NextResponse.json(
-      {
-        error: "Failed to generate pSEO audit",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 }
+      { error: "Invalid request", details: e?.message ?? String(e) },
+      { status: 400 }
     );
   }
 }
-
