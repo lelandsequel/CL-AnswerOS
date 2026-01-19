@@ -1,24 +1,58 @@
 'use client';
 
 import { useState } from 'react';
-import { DeckOutlineForm } from '@/components/DeckOutlineForm';
-import { OutputPanel } from '@/components/OutputPanel';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import Spinner from '@/components/Spinner';
 import { DeckOutlineResult } from '@/lib/pseo-types';
 
 export default function DeckOutlinePage() {
+  const [formData, setFormData] = useState({
+    company_name: '',
+    website_url: '',
+    industry: '',
+    current_challenges: '',
+    target_outcomes: '',
+    budget_range: '',
+    timeline: '',
+  });
+
   const [result, setResult] = useState<DeckOutlineResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
-  const handleSubmit = async (data: any) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsLoading(true);
     setError(null);
 
     try {
+      const challenges = formData.current_challenges
+        .split('\n')
+        .map(c => c.trim())
+        .filter(c => c);
+
+      const outcomes = formData.target_outcomes
+        .split('\n')
+        .map(o => o.trim())
+        .filter(o => o);
+
       const response = await fetch('/api/deck-outline', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...formData,
+          current_challenges: challenges,
+          target_outcomes: outcomes,
+        }),
       });
 
       if (!response.ok) {
@@ -39,42 +73,193 @@ export default function DeckOutlinePage() {
     if (!result) return null;
 
     return (
-      <OutputPanel
-        title="Proposal Deck Outline"
-        content={result.outline}
-        filename={`deck-outline-${result.company_name.toLowerCase().replace(/\s+/g, '-')}.md`}
-      />
+      <Card>
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-gray-100">Proposal Deck Outline</h3>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                navigator.clipboard.writeText(result.outline);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              }}
+              className="text-xs px-3 py-1"
+            >
+              {copied ? 'Copied!' : 'Copy'}
+            </Button>
+            <Button
+              onClick={() => {
+                const element = document.createElement('a');
+                const file = new Blob([result.outline], { type: 'text/markdown' });
+                element.href = URL.createObjectURL(file);
+                element.download = `deck-outline-${result.company_name.toLowerCase().replace(/\s+/g, '-')}.md`;
+                document.body.appendChild(element);
+                element.click();
+                document.body.removeChild(element);
+              }}
+              className="text-xs px-3 py-1"
+            >
+              Download
+            </Button>
+          </div>
+        </div>
+
+        <pre className="bg-black/40 border border-white/10 rounded-xl p-4 text-xs text-gray-300 overflow-auto max-h-96 whitespace-pre-wrap break-words font-mono">
+          {result.outline}
+        </pre>
+      </Card>
     );
   };
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-50 mb-2">
-          Proposal Deck Outline Generator
-        </h1>
-        <p className="text-slate-400">
-          Generate a comprehensive proposal deck outline for your client
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        <div className="rounded-lg border border-slate-700 bg-slate-900/50 p-6">
-          <h2 className="text-xl font-semibold text-slate-50 mb-4">
-            Client Information
-          </h2>
-          <DeckOutlineForm onSubmit={handleSubmit} isLoading={isLoading} />
+    <div className="space-y-8">
+      <Card>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#0A84FF]">
+              Proposal Deck Outline Generator
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-400">
+              Generate a comprehensive 14-slide proposal deck outline with speaker notes and visual suggestions.
+            </p>
+          </div>
         </div>
 
-        <div>
-          {error && (
-            <div className="rounded-lg border border-red-700 bg-red-900/20 p-4 text-red-300 mb-4">
-              {error}
-            </div>
-          )}
-          {renderOutput()}
+        <div className="grid gap-4 md:grid-cols-[minmax(0,2.2fr)_minmax(0,1.6fr)]">
+          {/* Left side: form */}
+          <div className="space-y-3">
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <div>
+                <label className="text-xs text-gray-400 block mb-1">
+                  Company Name *
+                </label>
+                <Input
+                  type="text"
+                  name="company_name"
+                  value={formData.company_name}
+                  onChange={handleChange}
+                  required
+                  placeholder="e.g., RockSpring Capital"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-gray-400 block mb-1">
+                  Website URL *
+                </label>
+                <Input
+                  type="url"
+                  name="website_url"
+                  value={formData.website_url}
+                  onChange={handleChange}
+                  required
+                  placeholder="https://example.com"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-gray-400 block mb-1">
+                  Industry *
+                </label>
+                <Input
+                  type="text"
+                  name="industry"
+                  value={formData.industry}
+                  onChange={handleChange}
+                  required
+                  placeholder="e.g., Commercial Real Estate Finance"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-gray-400 block mb-1">
+                  Current Challenges (one per line) *
+                </label>
+                <Textarea
+                  name="current_challenges"
+                  value={formData.current_challenges}
+                  onChange={handleChange}
+                  required
+                  placeholder="Limited organic visibility&#10;Missing from AI search results&#10;Inconsistent lead quality"
+                  rows={4}
+                  className="text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-gray-400 block mb-1">
+                  Target Outcomes (one per line) *
+                </label>
+                <Textarea
+                  name="target_outcomes"
+                  value={formData.target_outcomes}
+                  onChange={handleChange}
+                  required
+                  placeholder="Rank for 200+ keywords&#10;Appear in AI Overviews&#10;2-3x increase in qualified leads"
+                  rows={4}
+                  className="text-xs"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-gray-400 block mb-1">
+                    Budget Range
+                  </label>
+                  <Input
+                    type="text"
+                    name="budget_range"
+                    value={formData.budget_range}
+                    onChange={handleChange}
+                    placeholder="e.g., $25K-$50K"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs text-gray-400 block mb-1">
+                    Timeline
+                  </label>
+                  <Input
+                    type="text"
+                    name="timeline"
+                    value={formData.timeline}
+                    onChange={handleChange}
+                    placeholder="e.g., 90 days"
+                  />
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="w-full"
+              >
+                {isLoading ? 'Generating...' : 'Generate Deck Outline'}
+              </Button>
+            </form>
+
+            {error && (
+              <div className="text-xs text-red-300 bg-red-900/30 border border-red-800 rounded-xl px-3 py-2 whitespace-pre-wrap">
+                {error}
+              </div>
+            )}
+          </div>
+
+          {/* Right side: result */}
+          <div>
+            {!result && !isLoading && (
+              <div className="text-xs sm:text-sm text-gray-500">
+                Fill in your client details and click "Generate Deck Outline" to see a 14-slide proposal deck with speaker notes and visual suggestions.
+              </div>
+            )}
+
+            {isLoading && <Spinner />}
+
+            {result && renderOutput()}
+          </div>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
