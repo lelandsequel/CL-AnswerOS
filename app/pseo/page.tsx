@@ -7,6 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import Spinner from '@/components/Spinner';
 import { PseoAuditResponse } from '@/lib/pseo-types';
+import { AssetLoader } from '@/components/assets/AssetLoader';
+import { auditAssetToPseoForm } from '@/lib/asset-mapper';
+import type { ClientAsset } from '@/lib/types';
 
 export default function PSEOPage() {
   const [formData, setFormData] = useState({
@@ -148,6 +151,18 @@ export default function PSEOPage() {
         <div className="grid gap-4 md:grid-cols-[minmax(0,2.2fr)_minmax(0,1.6fr)]">
           {/* Left side: form */}
           <div className="space-y-3">
+            {/* Asset Loader */}
+            <div className="flex gap-2">
+              <AssetLoader
+                assetType="audit"
+                onAssetSelected={(asset: ClientAsset) => {
+                  const formValues = auditAssetToPseoForm(asset);
+                  setFormData(prev => ({ ...prev, ...formValues }));
+                }}
+                label="📦 Load Audit Asset"
+              />
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-3">
               <div>
                 <label className="text-xs text-gray-400 block mb-1">
