@@ -3,6 +3,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -923,12 +924,12 @@ export default function AuditPage() {
                     : "Generate Report"}
                 </Button>
 
-                <a
+                <Link
                   href="/clients"
                   className="text-[11px] text-gray-400 hover:text-gray-200 underline-offset-2 hover:underline"
                 >
                   Open Clients Dashboard
-                </a>
+                </Link>
               </div>
             )}
           </div>
@@ -939,7 +940,7 @@ export default function AuditPage() {
               <div className="text-xs sm:text-sm text-gray-500">
                 Run an audit to see structured findings, AEO
                 opportunities, and raw scan context. Once saved,
-                you'll be able to see it under{" "}
+                you&apos;ll be able to see it under{" "}
                 <span className="text-gray-200">
                   /clients
                 </span>
@@ -1056,9 +1057,8 @@ export default function AuditPage() {
                             </h3>
                             <Button
                               variant="ghost"
-                              size="sm"
                               onClick={() => setShowReportPreview(false)}
-                              className="text-slate-400 hover:text-white"
+                              className="text-slate-400 hover:text-white px-2 py-1"
                             >
                               ✕
                             </Button>

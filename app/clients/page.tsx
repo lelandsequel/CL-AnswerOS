@@ -3,6 +3,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -131,7 +132,7 @@ export default function ClientsPage() {
               Clients
             </h1>
             <p className="text-xs sm:text-sm text-gray-400">
-              Attach audits, content, and leads to real clients so you're
+              Attach audits, content, and leads to real clients so you&apos;re
               operating a book of business, not a pile of PDFs.
             </p>
           </div>
@@ -305,12 +306,12 @@ export default function ClientsPage() {
                     </div>
                   )}
                   <div className="pt-2">
-                    <a
+                    <Link
                       href={`/clients/${selectedClient.id}/assets`}
                       className="text-xs text-[#0A84FF] hover:underline"
                     >
                       View Client Assets →
-                    </a>
+                    </Link>
                   </div>
                 </div>
               ) : (
@@ -343,7 +344,7 @@ export default function ClientsPage() {
               )}
               {selectedClient && audits.length === 0 && (
                 <div className="text-xs text-gray-500">
-                  No audits attached yet. When you run audits, we'll add a
+                  No audits attached yet. When you run audits, we&apos;ll add a
                   client assignment path next so they show up here.
                 </div>
               )}

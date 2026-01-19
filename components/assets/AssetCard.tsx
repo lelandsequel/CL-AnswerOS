@@ -9,14 +9,25 @@ interface AssetCardProps {
   showClient?: boolean;
 }
 
-export function AssetCard({ asset, showClient }: AssetCardProps) {
-  const Icon = getIconForType(asset.type);
+function renderIconForType(type: string) {
+  switch (type) {
+    case "audit":
+      return <BarChart2 size={20} />;
+    case "lelandized_report":
+      return <FileText size={20} />;
+    case "keyword_research":
+      return <Globe size={20} />;
+    default:
+      return <File size={20} />;
+  }
+}
 
+export function AssetCard({ asset }: AssetCardProps) {
   return (
     <Card className="p-4 hover:bg-white/5 transition-colors cursor-pointer group">
       <div className="flex items-start justify-between gap-3">
         <div className="p-2 rounded-lg bg-white/5 text-[#0A84FF] group-hover:bg-[#0A84FF]/10 group-hover:text-[#0A84FF]">
-          <Icon size={20} />
+          {renderIconForType(asset.type)}
         </div>
         <div className="text-[10px] text-gray-500">
           {new Date(asset.createdAt).toLocaleDateString()}
@@ -44,17 +55,4 @@ export function AssetCard({ asset, showClient }: AssetCardProps) {
       </div>
     </Card>
   );
-}
-
-function getIconForType(type: string) {
-  switch (type) {
-    case "audit":
-      return BarChart2;
-    case "lelandized_report":
-      return FileText;
-    case "keyword_research":
-      return Globe;
-    default:
-      return File;
-  }
 }

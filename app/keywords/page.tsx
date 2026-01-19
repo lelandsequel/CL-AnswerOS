@@ -175,7 +175,7 @@ export default function KeywordsPage() {
             )}
 
             <p className="text-[10px] text-gray-500">
-              Use the CSV export for spreadsheets and the "Copy as Plan" button
+              Use the CSV export for spreadsheets and the &quot;Copy as Plan&quot; button
               to drop clusters directly into Notion, slides, or audit docs.
             </p>
           </div>

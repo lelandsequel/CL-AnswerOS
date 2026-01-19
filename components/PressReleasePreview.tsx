@@ -63,7 +63,7 @@ export function PressReleasePreview({ data }: { data: PressReleaseResponse }) {
             <ul className="list-disc list-inside space-y-1">
               {data.quotes.map((q, i) => (
                 <li key={i} className="italic">
-                  "{q}"
+                  &quot;{q}&quot;
                 </li>
               ))}
             </ul>

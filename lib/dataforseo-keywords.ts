@@ -184,7 +184,7 @@ export async function fetchKeywordIdeas(
     .map((k) => k.keyword)
     .filter(Boolean);
 
-  let volumeMap = new Map<string, DFSSearchVolumeItem>();
+  const volumeMap = new Map<string, DFSSearchVolumeItem>();
 
   if (keywordsForVolume.length) {
     const volumePayload = keywordsForVolume.map((kw) => ({
