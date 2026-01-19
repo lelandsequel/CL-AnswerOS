@@ -26,6 +26,13 @@ export interface PSEOPageType {
   schemaTypes: string[];
 }
 
+export interface KeywordMetrics {
+  keyword: string;
+  searchVolume: number;
+  cpc: number;
+  competition: number;
+}
+
 export interface PSEOAuditResult {
   company_name: string;
   industry: string;
@@ -38,6 +45,7 @@ export interface PSEOAuditResult {
     title: string;
     url: string;
     pageType: string;
+    metrics?: KeywordMetrics;
   }>;
   contentTemplates: Record<string, string[]>;
 }

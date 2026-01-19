@@ -3,12 +3,80 @@
 
 import { PSEOAuditRequest, PSEOAuditResult, PSEOPageType } from "./pseo-types";
 import { buildPSEOAuditPrompt } from "./operator-prompts";
+import { fetchKeywordDataFromDataForSEO } from "./dataforseo-extended";
 
 export async function generatePSEOAudit(
   request: PSEOAuditRequest
 ): Promise<PSEOAuditResult> {
-  // For now, use deterministic defaults (can be enhanced with LLM later)
-  return getDefaultPSEOAudit(request);
+  // Generate base audit
+  const audit = getDefaultPSEOAudit(request);
+
+  // Enrich with DataForSEO keyword metrics if available
+  try {
+    await enrichAuditWithKeywordMetrics(audit, request);
+  } catch (error) {
+    console.warn('Failed to enrich pSEO audit with DataForSEO metrics:', error);
+    // Continue with non-enriched data
+  }
+
+  return audit;
+}
+
+async function enrichAuditWithKeywordMetrics(
+  audit: PSEOAuditResult,
+  request: PSEOAuditRequest
+): Promise<void> {
+  // Generate keywords from page types and services
+  const keywords = generateKeywordsForEnrichment(audit, request);
+
+  if (keywords.length === 0) return;
+
+  // Fetch metrics from DataForSEO
+  const metrics = await fetchKeywordDataFromDataForSEO(keywords, {
+    location_name: request.geography || 'United States',
+  });
+
+  // Create a map for quick lookup
+  const metricsMap = new Map(
+    metrics.map(m => [m.keyword.toLowerCase(), m])
+  );
+
+  // Enrich sample pages with metrics
+  audit.samplePages = audit.samplePages.map(page => ({
+    ...page,
+    metrics: metricsMap.get(page.title.toLowerCase()),
+  }));
+}
+
+function generateKeywordsForEnrichment(
+  audit: PSEOAuditResult,
+  request: PSEOAuditRequest
+): string[] {
+  const keywords: Set<string> = new Set();
+
+  // Add service-based keywords
+  if (request.services && Array.isArray(request.services)) {
+    request.services.forEach(service => {
+      keywords.add(service);
+      keywords.add(`${service} ${request.geography || 'near me'}`);
+      keywords.add(`best ${service}`);
+    });
+  }
+
+  // Add industry keywords
+  if (request.industry) {
+    keywords.add(request.industry);
+    keywords.add(`${request.industry} services`);
+    keywords.add(`${request.industry} near me`);
+  }
+
+  // Add location-based keywords
+  if (request.geography) {
+    keywords.add(`${request.industry} ${request.geography}`);
+    keywords.add(`${request.target_customer} ${request.geography}`);
+  }
+
+  return Array.from(keywords).slice(0, 50); // Limit to 50 keywords
 }
 
 function getDefaultPSEOAudit(request: PSEOAuditRequest): PSEOAuditResult {

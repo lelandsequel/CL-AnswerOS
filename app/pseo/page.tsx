@@ -97,7 +97,10 @@ ${result.schemaRecommendations.map((s) => `- ${s}`).join('\n')}
 ## Sample Pages (${result.samplePages.length} total)
 
 ${result.samplePages
-  .map((p) => `- **${p.title}** (\`${p.url}\`) - ${p.pageType}`)
+  .map((p) => {
+    const metrics = p.metrics ? ` | Vol: ${p.metrics.searchVolume} | CPC: $${p.metrics.cpc.toFixed(2)} | Comp: ${(p.metrics.competition * 100).toFixed(0)}%` : '';
+    return `- **${p.title}** (\`${p.url}\`) - ${p.pageType}${metrics}`;
+  })
   .join('\n')}
 
 ## Content Templates
