@@ -8,13 +8,14 @@ LelandOS is a Next.js 15.5.6 application that leverages multiple LLM providers (
 
 ### Key Features
 
-- **🔍 Website Audits** - Comprehensive SEO/AEO analysis with multi-stage Claude pipeline
+- **🔍 Website Audits** - Comprehensive SEO/AEO analysis across 5 SEO pillars with multi-stage Claude pipeline
+- **📊 Detailed Reports** - Download audits as TXT or Markdown with full analysis, roadmaps, and quick wins
 - **🔧 Fix Engine** - Generates concrete fix packs from audit results
 - **🎯 Keyword Suite** - Advanced keyword research with clustering and metrics
 - **📝 Content Generation** - Press releases, articles, landing pages, social content
 - **👥 Lead Generation** - Real business data via DataForSEO with AI scoring
-- **🎨 Lelandizer** - Tone transformation and content rewriting
-- **💾 Supabase Integration** - Persistent storage for audits and results
+- **🎨 Report Generator** - Transform audits into operator-grade reports with Board Summary, Whiteboard Roast, Moneyboard
+- **💾 Supabase Integration** - Persistent storage for audits, clients, and assets
 
 ## 🏗️ Architecture
 
@@ -48,15 +49,16 @@ Centralized LLM management with task-based routing:
 
 | Route | Purpose | LLM Task |
 |-------|---------|----------|
-| `/api/run-audit` | Website audit analysis | audit_analysis |
+| `/api/run-audit` | Website audit analysis (5 SEO pillars) | audit_analysis |
 | `/api/run-scan` | Raw website scan | audit_scan |
+| `/api/export-report` | Download audit as TXT or Markdown | N/A |
 | `/api/fix-engine` | Generate fix recommendations | audit_analysis |
 | `/api/keyword-suite` | Keyword research & clustering | keyword_suite |
 | `/api/keyword-research` | Keyword expansion | keyword_expand |
 | `/api/lead-generator` | Business lead discovery | lead_scoring |
 | `/api/content/generate` | Multi-format content creation | content_* |
 | `/api/press-release` | Press release generation | content_press_release |
-| `/api/lelandize` | Tone transformation | lelandizer |
+| `/api/lelandize` | Report Generator - Tone transformation | lelandizer |
 
 ## 🎨 Design System
 
@@ -139,6 +141,7 @@ lelandos/
 │   ├── llm.ts                  # Unified LLM router
 │   ├── types.ts                # TypeScript types
 │   ├── utils.ts                # Utility functions
+│   ├── reportGenerator.ts      # Report formatting (TXT/Markdown)
 │   ├── dataforseo.ts           # DataForSEO integration
 │   ├── dataforseo-leads.ts     # Lead generation API
 │   └── auditStore.ts           # Supabase audit storage
@@ -148,7 +151,36 @@ lelandos/
 └── next.config.ts
 ```
 
-## 🔌 API Integration
+## � Audit Structure
+
+### 5 SEO Pillars Analysis
+
+Every audit evaluates websites across:
+
+1. **Technical SEO** - Crawlability, indexability, site speed, mobile optimization
+2. **On-Page SEO** - Content quality, keyword optimization, structure, metadata
+3. **Off-Page SEO** - Backlinks, domain authority, brand mentions
+4. **User Experience** - Core Web Vitals, usability, engagement metrics
+5. **Content Strategy** - Relevance, depth, freshness, topical authority
+
+### Audit Output Includes
+
+- **Overview** - Domain health, current state, opportunity rating, raw score
+- **Core Issues** - Categorized by pillar with severity levels and business impact
+- **AEO Opportunities** - Answer Engine Optimization tactics with expected impact
+- **Content Playbook** - Positioning, messaging pillars, content clusters, target persona
+- **Quick Wins** - 48-hour actionable items with impact scores
+- **30/60/90 Roadmap** - Phased strategic initiatives
+- **Investment Outlook** - Budget recommendations and ROI projections
+
+### Report Export
+
+- **Download as TXT** - Plain text format for universal compatibility
+- **Download as Markdown** - Formatted markdown for styling and sharing
+- **Live Preview** - View full report in browser before downloading
+- **Client-Ready** - Professional formatting suitable for client presentations
+
+## �🔌 API Integration
 
 ### LLM Providers
 
@@ -283,7 +315,9 @@ Sok Pyeon - LelandOS Creator
 
 ---
 
-**Status:** Production Ready ✅  
-**Build:** Passing ✅  
-**TypeScript:** Strict Mode ✅  
-**Last Updated:** November 2024
+**Status:** Production Ready ✅
+**Build:** Passing ✅
+**TypeScript:** Strict Mode ✅
+**Report Export:** TXT & Markdown ✅
+**5 SEO Pillars:** Fully Implemented ✅
+**Last Updated:** January 2026
