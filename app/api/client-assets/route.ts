@@ -66,13 +66,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!clientId) {
-      console.log("[Client Assets POST] No clientId provided");
-      return NextResponse.json(
-        { error: "clientId is required to save an asset" },
-        { status: 400 }
-      );
-    }
+    // clientId is optional - allow saving assets without a client association
+    // This is useful for saving templates or general assets
 
     const supabase = getSupabaseServer();
 

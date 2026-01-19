@@ -48,7 +48,7 @@ export function SaveAssetButton({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          client_id: clientId ?? null,
+          clientId: clientId ?? null,
           type,
           title,
           summary: summary ?? '',
