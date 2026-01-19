@@ -6,12 +6,12 @@ import { usePathname } from 'next/navigation';
 const primaryLinks = [
   { label: 'Home', href: '/' },
   { label: 'Audit', href: '/audit' },
-  { label: 'Tone Adjust', href: '/tone-adjust' },
+  { label: 'pSEO', href: '/pseo' },
+  { label: 'Deck', href: '/deck-outline' },
   { label: 'Keywords', href: '/keywords' },
   { label: 'Content', href: '/content' },
   { label: 'Press', href: '/press-release' },
   { label: 'Leads', href: '/leads' },
-  { label: 'Assets', href: '/assets' },
 ];
 
 const secondaryLinks = [

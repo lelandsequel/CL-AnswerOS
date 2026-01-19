@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "gen": "tsx scripts/generate-proposal.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.69.0",
@@ -19,7 +20,8 @@
     "openai": "^6.9.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "tailwind-merge": "^3.4.0"
+    "tailwind-merge": "^3.4.0",
+    "zod": "^4.3.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -31,6 +33,7 @@
     "eslint-config-next": "16.0.3",
     "lightningcss": "^1.30.2",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   },
   "optionalDependencies": {
