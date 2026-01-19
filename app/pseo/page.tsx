@@ -111,7 +111,8 @@ export default function PSEOPage() {
                 const element = document.createElement('a');
                 const file = new Blob([output], { type: 'text/markdown' });
                 element.href = URL.createObjectURL(file);
-                element.download = `pseo-audit-${result.company_name.toLowerCase().replace(/\s+/g, '-')}.md`;
+                const companyName = (result.meta?.company_name || result.company_name || 'pseo-audit').toLowerCase().replace(/\s+/g, '-');
+                element.download = `${companyName}.md`;
                 document.body.appendChild(element);
                 element.click();
                 document.body.removeChild(element);

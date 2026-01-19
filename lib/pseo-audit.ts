@@ -1,5 +1,6 @@
 import { PseoAuditRequest, PseoAuditResponse, PseoPage, PseoPageType } from "./pseo-types";
 import { fetchKeywordDataFromDataForSEO } from "./dataforseo-extended";
+import { addPageBriefs } from "./pseo-briefs";
 
 function normList(input?: string[] | string): string[] {
   if (!input) return [];
@@ -359,6 +360,15 @@ export async function generatePseoAudit(req: PseoAuditRequest): Promise<PseoAudi
     // Continue without enrichment
   }
 
+  const baseMarkdown = lines.join("\n");
+  const enrichedMarkdown = addPageBriefs(baseMarkdown, {
+    company_name: company,
+    industry,
+    geography: geo,
+    markets: locations,
+    services,
+  });
+
   return {
     meta: {
       company_name: company,
@@ -372,6 +382,6 @@ export async function generatePseoAudit(req: PseoAuditRequest): Promise<PseoAudi
     internal_linking,
     schema_recommendations,
     pages,
-    markdown: lines.join("\n"),
+    markdown: enrichedMarkdown,
   };
 }
