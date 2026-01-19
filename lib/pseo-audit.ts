@@ -4,10 +4,15 @@ import { fetchKeywordDataFromDataForSEO } from "./dataforseo-extended";
 function normList(input?: string[] | string): string[] {
   if (!input) return [];
   if (Array.isArray(input)) return input.map(s => s.trim()).filter(Boolean);
-  return input
-    .split(",")
-    .map(s => s.trim())
-    .filter(Boolean);
+  return input.split(",").map(s => s.trim()).filter(Boolean);
+}
+
+function titleCase(s: string): string {
+  return s
+    .trim()
+    .split(/\s+/)
+    .map(w => (w.length ? w[0].toUpperCase() + w.slice(1).toLowerCase() : w))
+    .join(" ");
 }
 
 function slugify(s: string): string {
@@ -17,6 +22,44 @@ function slugify(s: string): string {
     .replace(/&/g, "and")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
+}
+
+function dedupe(list: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const item of list) {
+    const k = item.toLowerCase().trim();
+    if (!k) continue;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(item.trim());
+  }
+  return out;
+}
+
+function parseGeographyToLocations(geography: string): { locations: string[]; mode: "single" | "multi" } {
+  const g = geography.trim();
+  if (!g) return { locations: [], mode: "multi" };
+
+  const lc = g.toLowerCase();
+
+  if (lc === "united states" || lc === "usa") {
+    return {
+      locations: ["Houston", "Dallas", "Austin", "Chicago", "New York", "Los Angeles", "Miami", "Denver", "Atlanta", "Phoenix"],
+      mode: "multi",
+    };
+  }
+
+  if (lc === "texas" || lc.includes("texas")) {
+    return { locations: ["Houston", "Dallas", "Austin", "San Antonio", "Fort Worth"], mode: "multi" };
+  }
+
+  const parts = g.split(",").map(s => s.trim()).filter(Boolean);
+  if (parts.length >= 1 && parts[0].length) {
+    return { locations: [titleCase(parts[0])], mode: "single" };
+  }
+
+  return { locations: [], mode: "multi" };
 }
 
 const GEO_PRESETS: Record<string, string[]> = {
@@ -89,21 +132,23 @@ function countByType(pages: PseoPage[]): Record<PseoPageType, number> {
 }
 
 export async function generatePseoAudit(req: PseoAuditRequest): Promise<PseoAuditResponse> {
-  const services = normList(req.services);
-  const loanPrograms = req.loan_programs?.map(s => s.trim()).filter(Boolean) ?? [];
-  const assetClasses = req.asset_classes?.map(s => s.trim()).filter(Boolean) ?? [];
-  const useCases = req.use_cases?.map(s => s.trim()).filter(Boolean) ?? [];
-  const explicitLocations = req.locations?.map(s => s.trim()).filter(Boolean) ?? [];
-  const locations = explicitLocations.length ? explicitLocations : deriveLocations(req.geography);
-
   const company = req.company_name.trim();
   const industry = req.industry.trim();
   const geo = req.geography.trim();
 
+  const services = dedupe(normList(req.services));
+  const loanPrograms = dedupe((req.loan_programs ?? []).map(s => s.trim()).filter(Boolean));
+  const assetClasses = dedupe((req.asset_classes ?? []).map(s => s.trim()).filter(Boolean));
+  const useCases = dedupe((req.use_cases ?? []).map(s => s.trim()).filter(Boolean));
+  const explicitLocations = dedupe((req.locations ?? []).map(s => s.trim()).filter(Boolean));
+
+  const geoParsed = parseGeographyToLocations(geo);
+  const locations = explicitLocations.length ? explicitLocations : (geoParsed.locations.length ? geoParsed.locations : []);
+
   const url_conventions = {
     service_base: "/services",
     loan_base: "/loans",
-    asset_class_base: "/asset-class",
+    asset_class_base: "/asset-classes",
     market_base: "/markets",
     use_case_base: "/use-cases",
     qualify_base: "/qualify",
@@ -113,59 +158,33 @@ export async function generatePseoAudit(req: PseoAuditRequest): Promise<PseoAudi
 
   const pages: PseoPage[] = [];
 
+  const defaultLoanPrograms = ["Bridge Loans","Construction Financing","Permanent Debt","Mezzanine Financing","Preferred Equity"];
+  const defaultAssetClasses = ["Multifamily","Industrial","Office","Retail","Hospitality","Self Storage"];
+  const defaultUseCases = ["Acquisition Financing","Refinance","Value-Add Renovation","Ground-Up Development","Cash-Out Refinance"];
+
+  const finalLoanPrograms = loanPrograms.length ? loanPrograms : defaultLoanPrograms;
+  const finalAssetClasses = assetClasses.length ? assetClasses : defaultAssetClasses;
+  const finalUseCases = useCases.length ? useCases : defaultUseCases;
+
   for (const s of services) {
-    pages.push(
-      page(
-        "service",
-        `${s} for ${industry}`,
-        `${url_conventions.service_base}/${slugify(s)}`,
-        `${s} ${industry}`
-      )
-    );
+    const title = `${titleCase(s)} for ${titleCase(industry)}`;
+    pages.push(page("service", title, `${url_conventions.service_base}/${slugify(s)}`, `${s} ${industry}`));
   }
 
-  for (const lp of loanPrograms) {
-    pages.push(
-      page(
-        "loan_program",
-        `${lp}`,
-        `${url_conventions.loan_base}/${slugify(lp)}`,
-        `${lp} ${industry}`
-      )
-    );
+  for (const lp of finalLoanPrograms) {
+    pages.push(page("loan_program", titleCase(lp), `${url_conventions.loan_base}/${slugify(lp)}`, `${lp.toLowerCase()} ${industry}`));
   }
 
-  for (const ac of assetClasses) {
-    pages.push(
-      page(
-        "asset_class",
-        `${ac} Financing`,
-        `${url_conventions.asset_class_base}/${slugify(ac)}`,
-        `${ac} financing`
-      )
-    );
+  for (const ac of finalAssetClasses) {
+    pages.push(page("asset_class", `${titleCase(ac)} Pages`, `${url_conventions.asset_class_base}/${slugify(ac)}`, `${ac.toLowerCase()} ${industry}`));
   }
 
   for (const loc of locations) {
-    pages.push(
-      page(
-        "market",
-        `${loc} ${industry} Financing`,
-        `${url_conventions.market_base}/${slugify(loc)}`,
-        `${loc} ${industry} financing`
-      )
-    );
+    pages.push(page("market", `${titleCase(loc)} ${titleCase(industry)}`, `${url_conventions.market_base}/${slugify(loc)}`, `${loc.toLowerCase()} ${industry.toLowerCase()}`));
   }
 
-  for (const uc of useCases) {
-    pages.push(
-      page(
-        "use_case",
-        `${uc}`,
-        `${url_conventions.use_case_base}/${slugify(uc)}`,
-        `${uc} financing`
-      )
-    );
+  for (const uc of finalUseCases) {
+    pages.push(page("use_case", titleCase(uc), `${url_conventions.use_case_base}/${slugify(uc)}`, `${uc.toLowerCase()} ${industry.toLowerCase()}`));
   }
 
   const qualifiers = [
@@ -232,24 +251,19 @@ export async function generatePseoAudit(req: PseoAuditRequest): Promise<PseoAudi
 
   const schema_recommendations: Record<string, string[]> = {
     homepage: ["Organization", "WebSite", "BreadcrumbList"],
+    market: SCHEMA_TYPES.market,
     service: SCHEMA_TYPES.service,
     loan_program: SCHEMA_TYPES.loan_program,
     asset_class: SCHEMA_TYPES.asset_class,
-    market: SCHEMA_TYPES.market,
-    use_case: SCHEMA_TYPES.use_case,
-    qualifier: SCHEMA_TYPES.qualifier,
-    comparison: SCHEMA_TYPES.comparison,
-    faq_hub: SCHEMA_TYPES.faq_hub,
   };
 
   const internal_linking = {
     hubs,
     spokes,
     rules: [
-      "All spokes must link back to 1–2 hubs using exact-match anchors.",
-      "Markets link to relevant loan programs and 1 qualifier page.",
-      "Asset class pages link to 2 use-cases and 1 comparison page.",
-      "FAQ hubs link to all related hubs + top spokes.",
+      "Hubs link to 5–8 spokes each using exact-match anchors.",
+      "Markets link to relevant hubs + 1 qualifier page.",
+      "FAQ hubs link to all hubs + top spokes.",
       "Every page includes breadcrumbs + related pages block.",
     ],
   };
@@ -260,6 +274,7 @@ export async function generatePseoAudit(req: PseoAuditRequest): Promise<PseoAudi
   lines.push(`## Overview`);
   lines.push(`- **Industry:** ${industry}`);
   lines.push(`- **Geography:** ${geo}`);
+  if (explicitLocations.length) lines.push(`- **Markets:** ${explicitLocations.join(", ")}`);
   lines.push(`- **Target Customer:** ${req.target_customer}`);
   lines.push(`- **Total Pages:** ${total_pages}`);
   lines.push(``);
@@ -270,7 +285,7 @@ export async function generatePseoAudit(req: PseoAuditRequest): Promise<PseoAudi
   lines.push(`## URL Conventions`);
   lines.push(`- Services: \`${url_conventions.service_base}/{service}\``);
   lines.push(`- Loans: \`${url_conventions.loan_base}/{program}\``);
-  lines.push(`- Asset Class: \`${url_conventions.asset_class_base}/{asset}\``);
+  lines.push(`- Asset Classes: \`${url_conventions.asset_class_base}/{asset}\``);
   lines.push(`- Markets: \`${url_conventions.market_base}/{market}\``);
   lines.push(`- Use Cases: \`${url_conventions.use_case_base}/{use-case}\``);
   lines.push(`- Qualify: \`${url_conventions.qualify_base}/{topic}\``);
@@ -281,9 +296,9 @@ export async function generatePseoAudit(req: PseoAuditRequest): Promise<PseoAudi
   for (const r of internal_linking.rules) lines.push(`- ${r}`);
   lines.push(``);
   lines.push(`## Schema`);
-  lines.push(`- Homepage: ${schema_recommendations.homepage.join(", ")}`);
-  lines.push(`- Market Pages: ${schema_recommendations.market.join(", ")}`);
-  lines.push(`- Service Pages: ${schema_recommendations.service.join(", ")}`);
+  lines.push(`- Homepage: Organization, WebSite, BreadcrumbList`);
+  lines.push(`- Market: ${schema_recommendations.market.join(", ")}`);
+  lines.push(`- Service: ${schema_recommendations.service.join(", ")}`);
   lines.push(``);
   lines.push(`## Pages (${total_pages})`);
   for (const p of pages) lines.push(`- **${p.title}** (\`${p.path}\`) — ${p.type}`);

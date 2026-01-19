@@ -1,49 +1,50 @@
 // lib/operator-prompts.ts
 // Shared prompt builders for SEO/AEO/pSEO/Deck operations
 
-export function buildPSEOAuditPrompt(params: {
-  company_name: string;
-  website_url: string;
-  industry: string;
-  geography: string;
-  services: string[];
-  target_customer: string;
-  notes?: string;
-}): string {
-  return `You are an expert pSEO (Programmatic SEO) strategist. Analyze this company and create a comprehensive pSEO plan.
+import { PseoAuditRequest } from "./pseo-types";
 
-Company: ${params.company_name}
-Website: ${params.website_url}
-Industry: ${params.industry}
-Geography: ${params.geography}
-Services: ${params.services.join(", ")}
-Target Customer: ${params.target_customer}
-${params.notes ? `Notes: ${params.notes}` : ""}
-
-Generate a JSON response with this structure:
-{
-  "pageTypes": [
-    {
-      "name": "Page Type Name",
-      "description": "What this page type targets",
-      "urlPattern": "/pattern/{variable}",
-      "estimatedCount": 25,
-      "templateSections": ["H1 with keyword", "Hero section", "Benefits list", "FAQ", "CTA"],
-      "schemaTypes": ["LocalBusiness", "Service", "FAQPage"]
-    }
-  ],
-  "urlStructure": "Recommended URL structure and slug conventions",
-  "internalLinkingStrategy": "Hub/spoke strategy description",
-  "schemaRecommendations": ["Schema type 1", "Schema type 2"],
-  "samplePages": [
-    {"title": "Page Title", "url": "/url-slug", "pageType": "Page Type Name"}
-  ],
-  "contentTemplates": {
-    "Page Type Name": ["Section 1", "Section 2", "Section 3"]
-  }
+function clean(s: string) {
+  return String(s ?? "").trim();
 }
 
-Provide at least 3 page types and 25+ sample pages. Be specific and actionable.`;
+export function buildPseoPrompt(req: PseoAuditRequest) {
+  const company = clean(req.company_name);
+  const website = clean(req.website_url);
+  const industry = clean(req.industry);
+  const geography = clean(req.geography);
+  const target = clean(req.target_customer);
+  const services = Array.isArray(req.services) ? req.services : String(req.services || "").split(",").map(s => s.trim()).filter(Boolean);
+
+  const locations = (req.locations ?? []).map(clean).filter(Boolean);
+  const loanPrograms = (req.loan_programs ?? []).map(clean).filter(Boolean);
+  const assetClasses = (req.asset_classes ?? []).map(clean).filter(Boolean);
+  const useCases = (req.use_cases ?? []).map(clean).filter(Boolean);
+
+  const notes = clean(req.notes || "");
+
+  return [
+    `You are generating a deterministic pSEO plan.`,
+    `Return STRICT JSON only matching the PseoAuditResponse schema.`,
+    ``,
+    `INPUT`,
+    `company_name: ${company}`,
+    `website_url: ${website}`,
+    `industry: ${industry}`,
+    `geography: ${geography}`,
+    locations.length ? `locations: ${locations.join(", ")}` : `locations: (none)`,
+    `target_customer: ${target}`,
+    services.length ? `services: ${services.join(", ")}` : `services: (none)`,
+    loanPrograms.length ? `loan_programs: ${loanPrograms.join(", ")}` : `loan_programs: (none)`,
+    assetClasses.length ? `asset_classes: ${assetClasses.join(", ")}` : `asset_classes: (none)`,
+    useCases.length ? `use_cases: ${useCases.join(", ")}` : `use_cases: (none)`,
+    notes ? `notes: ${notes}` : `notes: (none)`,
+    ``,
+    `RULES`,
+    `- Do NOT concatenate geography and locations. Keep them separate.`,
+    `- If locations are provided, markets must come ONLY from locations.`,
+    `- If locations are empty, derive markets from geography safely.`,
+    ``,
+  ].join("\n");
 }
 
 export function buildDeckOutlinePrompt(params: {
