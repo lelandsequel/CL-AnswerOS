@@ -6,6 +6,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const clientId = searchParams.get("clientId");
+    const type = searchParams.get("type");
 
     const supabase = getSupabaseServer();
 
@@ -16,6 +17,10 @@ export async function GET(req: NextRequest) {
 
     if (clientId) {
       query = query.eq("client_id", clientId);
+    }
+
+    if (type) {
+      query = query.eq("type", type);
     }
 
     const { data, error } = await query;
@@ -34,7 +39,7 @@ export async function GET(req: NextRequest) {
       updatedAt: row.updated_at,
     }));
 
-    return NextResponse.json({ assets });
+    return NextResponse.json(assets);
   } catch (err: any) {
     console.error("[client-assets] GET error:", err);
     return NextResponse.json(
