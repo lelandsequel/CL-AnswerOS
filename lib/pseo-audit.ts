@@ -1,4 +1,5 @@
 import { PseoAuditRequest, PseoAuditResponse, PseoPage, PseoPageType } from "./pseo-types";
+import { fetchKeywordDataFromDataForSEO } from "./dataforseo-extended";
 
 function normList(input?: string[] | string): string[] {
   if (!input) return [];
@@ -87,7 +88,7 @@ function countByType(pages: PseoPage[]): Record<PseoPageType, number> {
   return base;
 }
 
-export function generatePseoAudit(req: PseoAuditRequest): PseoAuditResponse {
+export async function generatePseoAudit(req: PseoAuditRequest): Promise<PseoAuditResponse> {
   const services = normList(req.services);
   const loanPrograms = req.loan_programs?.map(s => s.trim()).filter(Boolean) ?? [];
   const assetClasses = req.asset_classes?.map(s => s.trim()).filter(Boolean) ?? [];
@@ -289,6 +290,60 @@ export function generatePseoAudit(req: PseoAuditRequest): PseoAuditResponse {
 
   const markdown = lines.join("\n");
 
+  // Enrich pages with real DataForSEO keyword data
+  try {
+    const keywords = pages.map(p => p.primary_keyword);
+    const keywordData = await fetchKeywordDataFromDataForSEO(keywords, {
+      location_name: geo,
+    });
+
+    // Create a map for quick lookup
+    const dataMap = new Map(
+      keywordData.map(d => [d.keyword.toLowerCase(), d])
+    );
+
+    // Enrich pages with metrics
+    for (const page of pages) {
+      const data = dataMap.get(page.primary_keyword.toLowerCase());
+      if (data) {
+        (page as any).metrics = {
+          keyword: data.keyword,
+          searchVolume: data.searchVolume,
+          cpc: data.cpc,
+          competition: data.competition,
+        };
+      }
+    }
+
+    // Update markdown with metrics
+    const metricsLines: string[] = [];
+    metricsLines.push(`## Pages (${total_pages})`);
+    for (const p of pages) {
+      const metrics = (p as any).metrics;
+      if (metrics) {
+        metricsLines.push(
+          `- **${p.title}** (\`${p.path}\`) — ${p.type} | Vol: ${metrics.searchVolume} | CPC: $${metrics.cpc.toFixed(2)} | Comp: ${(metrics.competition * 100).toFixed(0)}%`
+        );
+      } else {
+        metricsLines.push(`- **${p.title}** (\`${p.path}\`) — ${p.type}`);
+      }
+    }
+
+    // Replace the pages section in markdown
+    const markdownLines = markdown.split("\n");
+    const pagesStartIdx = markdownLines.findIndex(l => l.startsWith("## Pages"));
+    if (pagesStartIdx !== -1) {
+      const newMarkdown = [
+        ...markdownLines.slice(0, pagesStartIdx),
+        ...metricsLines,
+      ].join("\n");
+      lines.splice(0, lines.length, ...newMarkdown.split("\n"));
+    }
+  } catch (error) {
+    console.error("Failed to enrich with DataForSEO:", error);
+    // Continue without enrichment
+  }
+
   return {
     meta: {
       company_name: company,
@@ -302,6 +357,6 @@ export function generatePseoAudit(req: PseoAuditRequest): PseoAuditResponse {
     internal_linking,
     schema_recommendations,
     pages,
-    markdown,
+    markdown: lines.join("\n"),
   };
 }

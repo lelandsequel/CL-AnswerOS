@@ -22,14 +22,7 @@ export async function fetchKeywordDataFromDataForSEO(
   }: { language_name?: string; location_name?: string } = {}
 ) {
   if (!DATAFORSEO_LOGIN || !DATAFORSEO_PASSWORD) {
-    console.warn("DataForSEO credentials missing – returning mock data");
-    // fallback mock
-    return keywords.map((k, idx) => ({
-      keyword: k,
-      searchVolume: 1000 - idx * 37,
-      cpc: +(1.5 + idx * 0.12).toFixed(2),
-      competition: +(0.2 + idx * 0.05).toFixed(2),
-    }));
+    throw new Error("DataForSEO credentials missing: DATAFORSEO_LOGIN and DATAFORSEO_PASSWORD required in .env.local");
   }
 
   const auth = Buffer.from(
