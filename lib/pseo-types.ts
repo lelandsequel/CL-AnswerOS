@@ -69,3 +69,31 @@ export type PseoAuditResponse = {
   pages: PseoPage[];
   markdown: string;
 };
+
+// Deck Outline Types (legacy support)
+export const DeckOutlineRequestSchema = z.object({
+  company_name: z.string().min(1, "Company name required"),
+  website_url: z.string().url("Valid URL required"),
+  industry: z.string().min(1, "Industry required"),
+  current_challenges: z.array(z.string()).min(1, "At least one challenge required"),
+  target_outcomes: z.array(z.string()).min(1, "At least one outcome required"),
+  budget_range: z.string().optional(),
+  timeline: z.string().optional(),
+});
+
+export type DeckOutlineRequest = z.infer<typeof DeckOutlineRequestSchema>;
+
+export interface DeckSlide {
+  slideNumber: number;
+  title: string;
+  bullets: string[];
+  speakerNotes: string;
+  suggestedVisuals: string;
+}
+
+export interface DeckOutlineResult {
+  company_name: string;
+  totalSlides: number;
+  slides: DeckSlide[];
+  outline: string;
+}

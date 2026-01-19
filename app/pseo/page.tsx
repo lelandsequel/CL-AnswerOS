@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import Spinner from '@/components/Spinner';
-import { PSEOAuditResult } from '@/lib/pseo-types';
+import { PseoAuditResponse } from '@/lib/pseo-types';
 
 export default function PSEOPage() {
   const [formData, setFormData] = useState({
@@ -17,9 +17,13 @@ export default function PSEOPage() {
     services: '',
     target_customer: '',
     notes: '',
+    locations: '',
+    loan_programs: '',
+    asset_classes: '',
+    use_cases: '',
   });
 
-  const [result, setResult] = useState<PSEOAuditResult | null>(null);
+  const [result, setResult] = useState<PseoAuditResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -35,18 +39,36 @@ export default function PSEOPage() {
     setError(null);
 
     try {
-      const services = formData.services
-        .split(',')
-        .map(s => s.trim())
-        .filter(s => s);
+      const payload: any = {
+        company_name: formData.company_name,
+        website_url: formData.website_url,
+        industry: formData.industry,
+        geography: formData.geography,
+        target_customer: formData.target_customer,
+        notes: formData.notes,
+      };
+
+      // Parse comma-separated arrays
+      if (formData.services) {
+        payload.services = formData.services.split(',').map(s => s.trim()).filter(Boolean);
+      }
+      if (formData.locations) {
+        payload.locations = formData.locations.split(',').map(s => s.trim()).filter(Boolean);
+      }
+      if (formData.loan_programs) {
+        payload.loan_programs = formData.loan_programs.split(',').map(s => s.trim()).filter(Boolean);
+      }
+      if (formData.asset_classes) {
+        payload.asset_classes = formData.asset_classes.split(',').map(s => s.trim()).filter(Boolean);
+      }
+      if (formData.use_cases) {
+        payload.use_cases = formData.use_cases.split(',').map(s => s.trim()).filter(Boolean);
+      }
 
       const response = await fetch('/api/pseo-audit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          services,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -54,7 +76,7 @@ export default function PSEOPage() {
         throw new Error(errorData.error || 'Failed to generate pSEO audit');
       }
 
-      const { data: auditResult } = await response.json();
+      const auditResult = await response.json();
       setResult(auditResult);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -66,52 +88,7 @@ export default function PSEOPage() {
   const renderOutput = () => {
     if (!result) return null;
 
-    const output = `# pSEO Audit: ${result.company_name}
-
-## Overview
-- **Industry:** ${result.industry}
-- **Total Estimated Pages:** ${result.totalEstimatedPages}
-
-## Page Types
-
-${result.pageTypes
-  .map(
-    (pt) => `### ${pt.name}
-- **Description:** ${pt.description}
-- **URL Pattern:** \`${pt.urlPattern}\`
-- **Estimated Count:** ${pt.estimatedCount}
-- **Template Sections:** ${pt.templateSections.join(', ')}
-- **Schema Types:** ${pt.schemaTypes.join(', ')}`
-  )
-  .join('\n\n')}
-
-## URL Structure
-${result.urlStructure}
-
-## Internal Linking Strategy
-${result.internalLinkingStrategy}
-
-## Schema Recommendations
-${result.schemaRecommendations.map((s) => `- ${s}`).join('\n')}
-
-## Sample Pages (${result.samplePages.length} total)
-
-${result.samplePages
-  .map((p) => {
-    const metrics = p.metrics ? ` | Vol: ${p.metrics.searchVolume} | CPC: $${p.metrics.cpc.toFixed(2)} | Comp: ${(p.metrics.competition * 100).toFixed(0)}%` : '';
-    return `- **${p.title}** (\`${p.url}\`) - ${p.pageType}${metrics}`;
-  })
-  .join('\n')}
-
-## Content Templates
-
-${Object.entries(result.contentTemplates)
-  .map(
-    ([pageType, sections]) => `### ${pageType}
-${(sections as string[]).map((s) => `- ${s}`).join('\n')}`
-  )
-  .join('\n\n')}
-`;
+    const output = result.markdown;
 
     return (
       <Card>
@@ -269,6 +246,62 @@ ${(sections as string[]).map((s) => `- ${s}`).join('\n')}`
                   rows={3}
                   className="text-xs"
                 />
+              </div>
+
+              <div className="border-t border-white/10 pt-4 mt-4">
+                <p className="text-xs text-gray-500 mb-3">Optional: Customize page types</p>
+
+                <div>
+                  <label className="text-xs text-gray-400 block mb-1">
+                    Locations (comma-separated)
+                  </label>
+                  <Input
+                    type="text"
+                    name="locations"
+                    value={formData.locations}
+                    onChange={handleChange}
+                    placeholder="e.g., Houston, Dallas, Austin"
+                  />
+                </div>
+
+                <div className="mt-3">
+                  <label className="text-xs text-gray-400 block mb-1">
+                    Loan Programs (comma-separated)
+                  </label>
+                  <Input
+                    type="text"
+                    name="loan_programs"
+                    value={formData.loan_programs}
+                    onChange={handleChange}
+                    placeholder="e.g., Bridge Loans, Construction Loans"
+                  />
+                </div>
+
+                <div className="mt-3">
+                  <label className="text-xs text-gray-400 block mb-1">
+                    Asset Classes (comma-separated)
+                  </label>
+                  <Input
+                    type="text"
+                    name="asset_classes"
+                    value={formData.asset_classes}
+                    onChange={handleChange}
+                    placeholder="e.g., Commercial Real Estate, Multifamily"
+                  />
+                </div>
+
+                <div className="mt-3">
+                  <label className="text-xs text-gray-400 block mb-1">
+                    Use Cases (comma-separated)
+                  </label>
+                  <Input
+                    type="text"
+                    name="use_cases"
+                    value={formData.use_cases}
+                    onChange={handleChange}
+                    placeholder="e.g., Fix and Flip, Ground-Up Development"
+                  />
+                </div>
               </div>
 
               <Button
