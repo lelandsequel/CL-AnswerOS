@@ -26,6 +26,54 @@ type SaveState =
   | "saved"
   | "error";
 
+/**
+ * Extract structured fields from audit result for deterministic asset mapping
+ */
+function extractStructuredFields(auditResult: AuditResultPayload) {
+  if (!auditResult.structuredAudit) return {};
+
+  const audit = auditResult.structuredAudit;
+
+  // Extract company name from URL
+  const companyName = auditResult.url
+    ? auditResult.url
+        .replace(/^https?:\/\/(www\.)?/, '')
+        .split('.')[0]
+        .replace(/[-_]/g, ' ')
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ')
+    : '';
+
+  // Extract industry
+  const industry = audit.overview?.industry ||
+    audit.industry ||
+    '';
+
+  // Extract geography
+  const geography = audit.overview?.geography ||
+    audit.geography ||
+    '';
+
+  // Extract services from content_playbook
+  const services = audit.content_playbook?.content_pillars || [];
+
+  // Extract target customer
+  const targetCustomer = audit.content_playbook?.target_persona?.summary || '';
+
+  return {
+    company_name: companyName,
+    website_url: auditResult.url,
+    industry,
+    geography,
+    services: Array.isArray(services) ? services : [],
+    target_customer: targetCustomer,
+    core_issues: audit.core_issues || [],
+    quick_wins: audit.quick_wins_48h || [],
+    aeo_opportunities: audit.aeo_opportunities || [],
+  };
+}
+
 export default function AuditPage() {
   const [url, setUrl] = useState("");
   const [notes, setNotes] = useState("");
@@ -980,7 +1028,10 @@ export default function AuditPage() {
                           ?.summary ||
                         "Structured SEO/AEO audit"
                       }
-                      payload={auditResult}
+                      payload={{
+                        ...auditResult,
+                        structuredFields: extractStructuredFields(auditResult),
+                      }}
                       tags={["audit", "seo"]}
                     />
 

@@ -54,9 +54,8 @@ export function AssetLoader({
     <div className={className}>
       <Button
         variant="outline"
-        size="sm"
         onClick={() => setIsOpen(!isOpen)}
-        className="text-xs"
+        className="text-xs px-3 py-1"
       >
         {label}
       </Button>
