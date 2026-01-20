@@ -87,26 +87,49 @@ test.describe('One-Click Demo Flow', () => {
     await expect(deckStepper).toBeVisible();
   });
 
-  test('should be idempotent (multiple clicks safe)', async ({ page }) => {
+  test('should be idempotent (multiple clicks reuse same asset)', async ({ page }) => {
     await page.goto(BASE_URL);
-    
-    // Click Run Demo twice
+
+    // Click Run Demo first time
     const runDemoButton = page.locator('button:has-text("Run Demo")').first();
     await runDemoButton.click();
     await page.waitForURL(/\/pseo\?asset=.*&demo=1/);
-    
+
     const firstUrl = page.url();
-    
+    const firstAssetMatch = firstUrl.match(/asset=([^&]+)/);
+    const firstAssetId = firstAssetMatch?.[1];
+
     // Go back and click again
     await page.goto(BASE_URL);
     await runDemoButton.click();
     await page.waitForURL(/\/pseo\?asset=.*&demo=1/);
-    
+
     const secondUrl = page.url();
-    
-    // Both should work (may have different assetIds, but both should be valid)
+    const secondAssetMatch = secondUrl.match(/asset=([^&]+)/);
+    const secondAssetId = secondAssetMatch?.[1];
+
+    // Both should use the SAME assetId (idempotent)
+    expect(firstAssetId).toBe(secondAssetId);
     expect(firstUrl).toContain('/pseo');
     expect(secondUrl).toContain('/pseo');
+  });
+
+  test('should return reused flag on second call', async ({ page, context }) => {
+    // Make first API call
+    const res1 = await context.request.post(`${BASE_URL}/api/demo/create-audit-asset`);
+    const data1 = await res1.json();
+
+    expect(data1.success).toBe(true);
+    expect(data1.assetId).toBeTruthy();
+    expect(data1.reused).toBe(false); // First call creates new asset
+
+    // Make second API call
+    const res2 = await context.request.post(`${BASE_URL}/api/demo/create-audit-asset`);
+    const data2 = await res2.json();
+
+    expect(data2.success).toBe(true);
+    expect(data2.assetId).toBe(data1.assetId); // Same assetId
+    expect(data2.reused).toBe(true); // Second call reuses existing asset
   });
 });
 

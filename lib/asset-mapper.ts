@@ -25,6 +25,11 @@ export interface AuditAssetPayload {
   structuredAudit: any;
   keywordMetrics?: any;
   structuredFields?: StructuredFields; // NEW: Explicit fields
+  metadata?: {
+    demo?: boolean;
+    demo_key?: string;
+    demo_created_at?: string;
+  };
 }
 
 export interface PseoFormData {

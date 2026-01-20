@@ -1,9 +1,12 @@
 /**
  * Deterministic demo payload for one-click demo
  * Same output every run (no randomness, no external API calls)
+ * Includes metadata for idempotent asset reuse
  */
 
 import type { AuditAssetPayload, StructuredFields } from '@/lib/asset-mapper';
+
+export const DEMO_KEY = 'rockspring_v1';
 
 export function getDemoAuditPayload(): AuditAssetPayload {
   const structuredFields: StructuredFields = {
@@ -35,6 +38,11 @@ export function getDemoAuditPayload(): AuditAssetPayload {
 
   return {
     url: 'https://rockspring.com',
+    metadata: {
+      demo: true,
+      demo_key: DEMO_KEY,
+      demo_created_at: new Date().toISOString(),
+    },
     rawScan: `
 # Rockspring Capital - SEO Audit
 

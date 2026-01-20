@@ -1,9 +1,9 @@
 /**
  * Unit tests for demo payload
- * Ensures deterministic output and required fields
+ * Ensures deterministic output, required fields, and metadata
  */
 
-import { getDemoAuditPayload, getDemoAuditPayloadWithOverrides } from '@/lib/demo/demoPayload';
+import { getDemoAuditPayload, getDemoAuditPayloadWithOverrides, DEMO_KEY } from '@/lib/demo/demoPayload';
 
 describe('Demo Payload', () => {
   it('should return a valid demo audit payload', () => {
@@ -70,6 +70,22 @@ describe('Demo Payload', () => {
     expect(payload.rawScan).toBeTruthy();
     expect(payload.rawScan.length).toBeGreaterThan(0);
     expect(payload.rawScan).toContain('Rockspring Capital');
+  });
+
+  it('should include demo metadata', () => {
+    const payload = getDemoAuditPayload();
+    expect(payload.metadata).toBeDefined();
+    expect(payload.metadata?.demo).toBe(true);
+    expect(payload.metadata?.demo_key).toBe(DEMO_KEY);
+    expect(payload.metadata?.demo_created_at).toBeDefined();
+  });
+
+  it('should have stable demo_key for idempotency', () => {
+    const payload1 = getDemoAuditPayload();
+    const payload2 = getDemoAuditPayload();
+
+    expect(payload1.metadata?.demo_key).toBe(payload2.metadata?.demo_key);
+    expect(payload1.metadata?.demo_key).toBe('rockspring_v1');
   });
 });
 
