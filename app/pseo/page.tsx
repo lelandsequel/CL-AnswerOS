@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,10 +10,15 @@ import Spinner from '@/components/Spinner';
 import { PseoAuditResponse } from '@/lib/pseo-types';
 import { AssetLoader } from '@/components/assets/AssetLoader';
 import { ClientBriefCard } from '@/components/assets/ClientBriefCard';
+import { DemoFlowStepper } from '@/components/DemoFlowStepper';
 import { auditAssetToPseoForm } from '@/lib/asset-mapper';
 import type { ClientAsset } from '@/lib/types';
 
 export default function PSEOPage() {
+  const searchParams = useSearchParams();
+  const assetId = searchParams.get('asset');
+  const isDemo = searchParams.get('demo') === '1';
+
   const [formData, setFormData] = useState({
     company_name: '',
     website_url: '',
@@ -34,6 +40,31 @@ export default function PSEOPage() {
   const [loadedAsset, setLoadedAsset] = useState<ClientAsset | null>(null);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
+  const [assetLoading, setAssetLoading] = useState(false);
+
+  // Auto-load asset from URL param
+  useEffect(() => {
+    if (assetId && !loadedAsset) {
+      setAssetLoading(true);
+      fetch(`/api/client-assets?type=audit&id=${assetId}`)
+        .then(res => res.json())
+        .then(assets => {
+          const asset = Array.isArray(assets) ? assets[0] : assets;
+          if (asset) {
+            handleAssetLoaded(asset);
+            if (isDemo) {
+              setToastMessage('✓ Demo asset loaded');
+            }
+          }
+        })
+        .catch(err => {
+          console.error('Failed to load asset:', err);
+          setToastMessage('Failed to load demo asset');
+          setToastType('error');
+        })
+        .finally(() => setAssetLoading(false));
+    }
+  }, [assetId, loadedAsset, isDemo]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -170,6 +201,11 @@ export default function PSEOPage() {
           }`}>
             {toastMessage}
           </div>
+        )}
+
+        {/* Demo Flow Stepper */}
+        {isDemo && assetId && (
+          <DemoFlowStepper currentStep="pseo" assetId={assetId} />
         )}
 
         <div className="grid gap-4 md:grid-cols-[minmax(0,2.2fr)_minmax(0,1.6fr)]">
