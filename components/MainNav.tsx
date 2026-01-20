@@ -1,7 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 const primaryLinks = [
   { label: 'Home', href: '/' },
@@ -28,6 +29,23 @@ function isActive(pathname: string, href: string) {
 
 export function MainNav() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [demoLoading, setDemoLoading] = useState(false);
+
+  const handleRunDemo = async () => {
+    setDemoLoading(true);
+    try {
+      const res = await fetch('/api/demo/create-audit-asset', { method: 'POST' });
+      const data = await res.json();
+      if (data.redirect) {
+        router.push(data.redirect);
+      }
+    } catch (error) {
+      console.error('Failed to run demo:', error);
+    } finally {
+      setDemoLoading(false);
+    }
+  };
 
   return (
     <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur">
@@ -70,6 +88,15 @@ export function MainNav() {
 
         {/* Secondary / right side */}
         <div className="flex items-center gap-2">
+          {/* Run Demo Button */}
+          <button
+            onClick={handleRunDemo}
+            disabled={demoLoading}
+            className="rounded-full px-3 py-1.5 text-xs font-semibold bg-gradient-to-r from-green-500/30 to-emerald-500/30 text-green-300 border border-green-500/50 hover:from-green-500/40 hover:to-emerald-500/40 transition-all disabled:opacity-50"
+          >
+            {demoLoading ? '⏳ Demo...' : '🚀 Run Demo'}
+          </button>
+
           <nav className="hidden items-center gap-1 lg:flex">
             {secondaryLinks.map((link) => {
               const active = isActive(pathname, link.href);

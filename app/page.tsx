@@ -3,6 +3,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 type ClientAsset = {
   id: string;
@@ -23,9 +24,26 @@ type AssetsResponse =
     };
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [assets, setAssets] = useState<ClientAsset[]>([]);
   const [assetsError, setAssetsError] = useState<string | null>(null);
   const [loadingAssets, setLoadingAssets] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
+
+  const handleRunDemo = async () => {
+    setDemoLoading(true);
+    try {
+      const res = await fetch('/api/demo/create-audit-asset', { method: 'POST' });
+      const data = await res.json();
+      if (data.redirect) {
+        router.push(data.redirect);
+      }
+    } catch (error) {
+      console.error('Failed to run demo:', error);
+    } finally {
+      setDemoLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchAssets = async () => {
@@ -106,6 +124,18 @@ export default function DashboardPage() {
 
       {/* Quick actions */}
       <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <button
+          onClick={handleRunDemo}
+          disabled={demoLoading}
+          className="rounded-2xl border border-green-500/40 bg-gradient-to-br from-green-950/40 to-emerald-950/40 p-4 text-left transition-all hover:border-green-500/60 hover:from-green-950/60 hover:to-emerald-950/60 disabled:opacity-50"
+        >
+          <div className="text-lg font-semibold text-green-300">
+            {demoLoading ? '⏳ Loading...' : '🚀 Run Demo'}
+          </div>
+          <p className="mt-1 text-xs text-green-200/70">
+            See the full platform in action with pre-loaded demo data.
+          </p>
+        </button>
         <QuickAction
           href="/audit"
           label="Run Site Audit"
@@ -120,11 +150,6 @@ export default function DashboardPage() {
           href="/assets"
           label="View Asset Library"
           description="See all saved audits, reports, lead lists and more."
-        />
-        <QuickAction
-          href="/clients"
-          label="Manage Clients"
-          description="Jump into client profiles and their asset libraries."
         />
       </section>
 
