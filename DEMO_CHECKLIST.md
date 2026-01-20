@@ -12,6 +12,30 @@
 
 ---
 
+## ⚡ QUICK START: 1-Click Demo (30 seconds)
+
+**NEW FEATURE: One-click demo flow for instant gratification**
+
+1. Start dev server: `npm run dev`
+2. Open http://localhost:3000
+3. Click **"🚀 Run Demo"** button (top right in nav OR on home page)
+4. ✓ Automatically creates demo asset with Rockspring Capital data
+5. ✓ Redirects to `/pseo?asset=<id>&demo=1`
+6. ✓ Form auto-fills instantly
+7. ✓ Demo stepper shows progress (Audit ✅, pSEO ✅, Deck ⏳)
+8. Click **"Next: Deck →"** button
+9. ✓ Redirects to `/deck-outline?asset=<id>&demo=1`
+10. ✓ Form auto-fills instantly
+11. ✓ Demo stepper shows: Audit ✅, pSEO ✅, Deck ✅
+
+**Key Points:**
+- Deterministic: Same output every time
+- Offline: No external API calls
+- Idempotent: Safe to click multiple times
+- <10 seconds from click to fully populated forms
+
+---
+
 ## 🎯 Demo Flow (5 minutes)
 
 ### **Step 1: Run an Audit** (1 min)
