@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import Spinner from '@/components/Spinner';
 import { PseoAuditResponse } from '@/lib/pseo-types';
 import { AssetLoader } from '@/components/assets/AssetLoader';
+import { ClientBriefCard } from '@/components/assets/ClientBriefCard';
 import { auditAssetToPseoForm } from '@/lib/asset-mapper';
 import type { ClientAsset } from '@/lib/types';
 
@@ -30,10 +31,22 @@ export default function PSEOPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [loadedAsset, setLoadedAsset] = useState<ClientAsset | null>(null);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleAssetLoaded = (asset: ClientAsset) => {
+    const formData = auditAssetToPseoForm(asset);
+    setFormData(prev => ({ ...prev, ...formData }));
+    setLoadedAsset(asset);
+    setToastMessage(`✓ Loaded: ${asset.title}`);
+    setToastType('success');
+    setTimeout(() => setToastMessage(''), 3000);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -148,6 +161,17 @@ export default function PSEOPage() {
           </div>
         </div>
 
+        {/* Toast Notification */}
+        {toastMessage && (
+          <div className={`fixed top-4 right-4 px-4 py-2 rounded-lg text-sm font-medium z-50 animate-in fade-in ${
+            toastType === 'success'
+              ? 'bg-green-500/20 border border-green-500/50 text-green-300'
+              : 'bg-red-500/20 border border-red-500/50 text-red-300'
+          }`}>
+            {toastMessage}
+          </div>
+        )}
+
         <div className="grid gap-4 md:grid-cols-[minmax(0,2.2fr)_minmax(0,1.6fr)]">
           {/* Left side: form */}
           <div className="space-y-3">
@@ -155,13 +179,16 @@ export default function PSEOPage() {
             <div className="flex gap-2">
               <AssetLoader
                 assetType="audit"
-                onAssetSelected={(asset: ClientAsset) => {
-                  const formValues = auditAssetToPseoForm(asset);
-                  setFormData(prev => ({ ...prev, ...formValues }));
-                }}
+                onAssetSelected={handleAssetLoaded}
+                onLoaded={handleAssetLoaded}
                 label="📦 Load Audit Asset"
               />
             </div>
+
+            {/* Client Brief Card */}
+            {loadedAsset && (
+              <ClientBriefCard asset={loadedAsset} />
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-3">
               <div>
