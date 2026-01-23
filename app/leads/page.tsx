@@ -1,3 +1,5 @@
+// app/leads/page.tsx
+
 "use client";
 
 import { useState } from "react";
@@ -61,9 +63,8 @@ export default function LeadsPage() {
       setLeads(data.results || []);
       setRawCount(data.raw_count ?? null);
       setDfsFilteredCount(data.filtered_count ?? null);
-      setAiScoredCount(null); // Reset AI scored count on new search
-      
-      // Show message if no results matched the location filter
+      setAiScoredCount(null);
+
       if (data.results?.length === 0 && data.message) {
         setError(data.message);
       }
@@ -100,9 +101,8 @@ export default function LeadsPage() {
 
       const enriched = Array.isArray(json.results) ? json.results : leads;
       setLeads(enriched);
-      
-      // Count how many leads have numeric seo_score OR opportunity_score
-      const scoredCount = enriched.filter((lead: any) => 
+
+      const scoredCount = enriched.filter((lead: any) =>
         typeof lead.seo_score === 'number' || typeof lead.opportunity_score === 'number'
       ).length;
       setAiScoredCount(scoredCount);
@@ -115,46 +115,41 @@ export default function LeadsPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <Card>
-        <h1 className="text-2xl sm:text-3xl font-bold text-[#0A84FF] mb-1">
-          Lead Generator
-        </h1>
-        <p className="text-xs sm:text-sm text-gray-400 mb-4">
-          DataForSEO Business Listings + Claude scoring. Type a niche
-          and a city/ZIP, get a hit list of businesses leaking money.
+    <main className="mx-auto w-full max-w-6xl px-4 py-12 font-mono">
+      {/* Header */}
+      <div className="mb-8">
+        <div className="text-xs text-slate-600 mb-2">// leads.init()</div>
+        <h1 className="text-3xl font-bold text-white mb-2">Lead Generator</h1>
+        <p className="text-slate-500 text-sm">
+          DataForSEO Business Listings + Claude scoring. Type a niche and a city/ZIP, get a hit list.
         </p>
+        <div className="mt-2 h-px w-24 bg-gradient-to-r from-emerald-500 to-transparent" />
+      </div>
 
-        <div className="grid gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)]">
-          <div className="space-y-3">
+      <div className="grid gap-8 lg:grid-cols-[1fr_1fr]">
+        {/* Left: Form */}
+        <Card title="config">
+          <div className="space-y-4">
+            <Input
+              label="industry"
+              value={industry}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setIndustry(e.target.value)}
+              placeholder="plastic surgeons, HVAC companies, SaaS startups..."
+            />
+
+            <Input
+              label="location"
+              value={location}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLocation(e.target.value)}
+              placeholder="Houston, TX or 77007"
+            />
+
             <div>
-              <label className="text-xs text-gray-400 block mb-1">
-                Industry / Niche
-              </label>
-              <Input
-                value={industry}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setIndustry(e.target.value)}
-                placeholder="plastic surgeons, HVAC companies, SaaS startups…"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-gray-400 block mb-1">
-                Location (City, Region, or ZIP)
-              </label>
-              <Input
-                value={location}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLocation(e.target.value)}
-                placeholder="Houston, TX or 77007"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-gray-400 block mb-1">
-                Country
-              </label>
+              <label className="block text-xs text-slate-500 mb-1.5">country</label>
               <select
                 value={countryCode}
                 onChange={(e) => setCountryCode(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-sm text-gray-200"
+                className="w-full px-4 py-2.5 font-mono text-sm bg-slate-950 border border-slate-800 text-slate-200 focus:border-violet-500/50 focus:outline-none"
               >
                 <option value="US">United States</option>
                 <option value="GB">United Kingdom</option>
@@ -163,91 +158,113 @@ export default function LeadsPage() {
                 <option value="DE">Germany</option>
               </select>
             </div>
-          </div>
 
-          <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-gray-400 block mb-1">
-                  Max Leads
-                </label>
-                <Input
-                  type="number"
-                  min={1}
-                  max={100}
-                  value={limit}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLimit(Number(e.target.value || 0))}
-                />
-              </div>
-              <div>
-                <label className="text-xs text-gray-400 block mb-1">
-                  Min Opportunity Score
-                </label>
-                <Input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={minScore}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMinScore(Number(e.target.value || 0))}
-                />
-              </div>
+              <Input
+                label="limit"
+                type="number"
+                min={1}
+                max={100}
+                value={limit}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLimit(Number(e.target.value || 0))}
+              />
+              <Input
+                label="min_score"
+                type="number"
+                min={0}
+                max={100}
+                value={minScore}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMinScore(Number(e.target.value || 0))}
+              />
             </div>
 
             <Button
               className="w-full"
               disabled={loading || !industry.trim() || !location.trim()}
               onClick={runLeadGen}
+              prefix="$"
             >
-              {loading ? "Finding Leads…" : "Run Lead Generator"}
+              {loading ? "finding..." : "run --leads"}
             </Button>
 
             {error && (
-              <div className="text-xs text-red-300 bg-red-900/30 border border-red-800 rounded-xl px-3 py-2 whitespace-pre-wrap">
-                {error}
+              <div className="text-xs text-red-400 border border-red-500/30 bg-red-500/5 p-3">
+                <span className="text-red-500">x</span> {error}
               </div>
             )}
           </div>
-        </div>
-      </Card>
+        </Card>
 
-      {loading && <Spinner />}
-
-      {leads.length > 0 && (
+        {/* Right: Status */}
         <div className="space-y-4">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-semibold text-slate-50">Lead List</h2>
-              <p className="text-xs text-slate-400">
-                Sorted by DataForSEO rating; enrich with AI to see SEO & opportunity scores.
-              </p>
-              <p className="text-[11px] text-slate-500 mt-1">
-                Debug · DFS: {rawCount ?? '—'} raw / {dfsFilteredCount ?? '—'} filtered ·
-                AI scored: {aiScoredCount ?? '—'}
-              </p>
+          {!leads.length && !loading && (
+            <div className="border border-dashed border-slate-800 p-8 text-center">
+              <div className="text-slate-600 text-sm">
+                <span className="text-slate-700">-&gt;</span> enter industry + location and run --leads
+              </div>
+              <div className="text-xs text-slate-700 mt-2">
+                outputs: businesses leaking money, opportunity scores
+              </div>
             </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={enrichWithAI}
-                disabled={enriching || !leads.length}
-                className="inline-flex items-center rounded-full border border-emerald-500/60 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-200 hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {enriching ? "Enriching…" : "Enrich with AI"}
-              </button>
-            </div>
-          </div>
-
-          {enrichError && (
-            <p className="mb-2 rounded-2xl border border-red-800/70 bg-red-950/70 px-3 py-2 text-xs text-red-100">
-              {enrichError}
-            </p>
           )}
 
+          {loading && (
+            <Card variant="terminal" title="~/leads">
+              <div className="text-slate-500 text-sm">
+                <span className="text-emerald-500">-&gt;</span> searching leads<span className="animate-pulse">...</span>
+              </div>
+              <Spinner />
+            </Card>
+          )}
+
+          {leads.length > 0 && !loading && (
+            <Card variant="terminal" title="~/leads/stats">
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between text-slate-400">
+                  <span>raw_count:</span>
+                  <span className="text-amber-400">{rawCount ?? '-'}</span>
+                </div>
+                <div className="flex justify-between text-slate-400">
+                  <span>filtered_count:</span>
+                  <span className="text-amber-400">{dfsFilteredCount ?? '-'}</span>
+                </div>
+                <div className="flex justify-between text-slate-400">
+                  <span>ai_scored:</span>
+                  <span className="text-amber-400">{aiScoredCount ?? '-'}</span>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-slate-800">
+                <Button
+                  variant="secondary"
+                  onClick={enrichWithAI}
+                  disabled={enriching || !leads.length}
+                  prefix="$"
+                  className="w-full"
+                >
+                  {enriching ? "enriching..." : "enrich --ai"}
+                </Button>
+              </div>
+
+              {enrichError && (
+                <div className="mt-3 text-xs text-red-400 border border-red-500/30 bg-red-500/5 p-3">
+                  <span className="text-red-500">x</span> {enrichError}
+                </div>
+              )}
+            </Card>
+          )}
+        </div>
+      </div>
+
+      {/* Results Table */}
+      {leads.length > 0 && (
+        <div className="mt-8">
+          <div className="text-xs text-slate-600 mb-4">// leads.results[{leads.length}]</div>
           <LeadTable leads={leads} />
         </div>
       )}
-    </div>
+
+      <div className="mt-16 text-xs text-slate-800">// end of file</div>
+    </main>
   );
 }
-

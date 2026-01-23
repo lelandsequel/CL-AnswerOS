@@ -10,13 +10,15 @@ type ClientBriefCardProps = {
 };
 
 export function ClientBriefCard({ asset, structuredFields }: ClientBriefCardProps) {
-  const fields = structuredFields || (asset.payload as any)?.structuredFields || {};
-  
+  // Extract structured fields from props or payload
+  const payloadFields = (asset.payload as { structuredFields?: StructuredFields })?.structuredFields;
+  const fields: StructuredFields = structuredFields || payloadFields || {};
+
   const company = fields.company_name || 'Unknown Company';
   const url = fields.website_url || '';
   const industry = fields.industry || 'Not specified';
   const geography = fields.geography || '';
-  const services = fields.services || [];
+  const services: string[] = fields.services || [];
   const targetCustomer = fields.target_customer || '';
 
   return (

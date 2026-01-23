@@ -1,26 +1,7 @@
 // app/api/client-assets/[id]/route.ts
 
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-function getSupabase() {
-  const url =
-    process.env.NEXT_PUBLIC_SUPABASE_URL ||
-    process.env.SUPABASE_URL;
-  const key =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!url || !key) {
-    throw new Error(
-      'Missing Supabase environment variables'
-    );
-  }
-
-  return createClient(url, key, {
-    auth: { persistSession: false },
-  });
-}
+import { getSupabaseServer } from '@/lib/supabaseServer';
 
 // GET /api/client-assets/[id]
 export async function GET(
@@ -30,7 +11,7 @@ export async function GET(
   const { id } = await params;
 
   try {
-    const supabase = getSupabase();
+    const supabase = getSupabaseServer();
     const { data, error } = await supabase
       .from('client_assets')
       .select('*')
@@ -72,7 +53,7 @@ export async function DELETE(
   const { id } = await params;
 
   try {
-    const supabase = getSupabase();
+    const supabase = getSupabaseServer();
     const { error } = await supabase
       .from('client_assets')
       .delete()

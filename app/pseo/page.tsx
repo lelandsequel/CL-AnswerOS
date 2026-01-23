@@ -1,6 +1,8 @@
+// app/pseo/page.tsx
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,10 +13,11 @@ import { PseoAuditResponse } from '@/lib/pseo-types';
 import { AssetLoader } from '@/components/assets/AssetLoader';
 import { ClientBriefCard } from '@/components/assets/ClientBriefCard';
 import { DemoFlowStepper } from '@/components/DemoFlowStepper';
+import { SiteGeneratorPanel } from '@/components/SiteGeneratorButton';
 import { auditAssetToPseoForm } from '@/lib/asset-mapper';
 import type { ClientAsset } from '@/lib/types';
 
-export default function PSEOPage() {
+function PSEOContent() {
   const searchParams = useSearchParams();
   const assetId = searchParams.get('asset');
   const isDemo = searchParams.get('demo') === '1';
@@ -53,13 +56,13 @@ export default function PSEOPage() {
           if (asset) {
             handleAssetLoaded(asset);
             if (isDemo) {
-              setToastMessage('✓ Demo asset loaded');
+              setToastMessage('asset loaded');
             }
           }
         })
         .catch(err => {
           console.error('Failed to load asset:', err);
-          setToastMessage('Failed to load demo asset');
+          setToastMessage('failed to load demo asset');
           setToastType('error');
         })
         .finally(() => setAssetLoading(false));
@@ -75,7 +78,7 @@ export default function PSEOPage() {
     const formData = auditAssetToPseoForm(asset);
     setFormData(prev => ({ ...prev, ...formData }));
     setLoadedAsset(asset);
-    setToastMessage(`✓ Loaded: ${asset.title}`);
+    setToastMessage(`loaded: ${asset.title}`);
     setToastType('success');
     setTimeout(() => setToastMessage(''), 3000);
   };
@@ -138,9 +141,9 @@ export default function PSEOPage() {
     const output = result.markdown;
 
     return (
-      <Card>
+      <Card variant="terminal" title="~/pseo/result">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-100">pSEO Audit Result</h3>
+          <div className="text-xs text-slate-600">// output.md</div>
           <div className="flex gap-2">
             <Button
               variant="outline"
@@ -149,11 +152,12 @@ export default function PSEOPage() {
                 setCopied(true);
                 setTimeout(() => setCopied(false), 2000);
               }}
-              className="text-xs px-3 py-1"
             >
-              {copied ? 'Copied!' : 'Copy'}
+              {copied ? 'copied' : 'copy --clipboard'}
             </Button>
             <Button
+              variant="secondary"
+              prefix="$"
               onClick={() => {
                 const element = document.createElement('a');
                 const file = new Blob([output], { type: 'text/markdown' });
@@ -164,221 +168,176 @@ export default function PSEOPage() {
                 element.click();
                 document.body.removeChild(element);
               }}
-              className="text-xs px-3 py-1"
             >
-              Download
+              download --md
             </Button>
           </div>
         </div>
 
-        <pre className="bg-black/40 border border-white/10 rounded-xl p-4 text-xs text-gray-300 overflow-auto max-h-96 whitespace-pre-wrap break-words font-mono">
+        <pre className="bg-slate-900/50 border border-slate-800 p-4 text-xs text-slate-300 overflow-auto max-h-96 whitespace-pre-wrap break-words font-mono">
           {output}
         </pre>
+
+        {/* Site Generator */}
+        <div className="mt-4 pt-4 border-t border-slate-800">
+          <SiteGeneratorPanel auditData={result} />
+        </div>
       </Card>
     );
   };
 
   return (
-    <div className="space-y-8">
-      <Card>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-[#0A84FF]">
-              pSEO Audit Generator
-            </h1>
-            <p className="text-xs sm:text-sm text-gray-400">
-              Generate a comprehensive programmatic SEO strategy with page types, URL structure, and 25+ sample pages.
-            </p>
-          </div>
+    <main className="mx-auto w-full max-w-6xl px-4 py-12 font-mono">
+      {/* Header */}
+      <div className="mb-8">
+        <div className="text-xs text-slate-600 mb-2">// pseo.init()</div>
+        <h1 className="text-3xl font-bold text-white mb-2">pSEO Generator</h1>
+        <p className="text-slate-500 text-sm">
+          Generate a programmatic SEO strategy with page types, URL structure, and sample pages.
+        </p>
+        <div className="mt-2 h-px w-24 bg-gradient-to-r from-violet-500 to-transparent" />
+      </div>
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className={`fixed top-4 right-4 px-4 py-2 text-sm font-mono z-50 border ${
+          toastType === 'success'
+            ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-300'
+            : 'bg-red-500/10 border-red-500/50 text-red-300'
+        }`}>
+          <span className={toastType === 'success' ? 'text-emerald-500' : 'text-red-500'}>→</span> {toastMessage}
         </div>
+      )}
 
-        {/* Toast Notification */}
-        {toastMessage && (
-          <div className={`fixed top-4 right-4 px-4 py-2 rounded-lg text-sm font-medium z-50 animate-in fade-in ${
-            toastType === 'success'
-              ? 'bg-green-500/20 border border-green-500/50 text-green-300'
-              : 'bg-red-500/20 border border-red-500/50 text-red-300'
-          }`}>
-            {toastMessage}
-          </div>
-        )}
-
-        {/* Demo Flow Stepper */}
-        {isDemo && assetId && (
+      {/* Demo Flow Stepper */}
+      {isDemo && assetId && (
+        <div className="mb-6">
           <DemoFlowStepper currentStep="pseo" assetId={assetId} />
-        )}
+        </div>
+      )}
 
-        <div className="grid gap-4 md:grid-cols-[minmax(0,2.2fr)_minmax(0,1.6fr)]">
-          {/* Left side: form */}
-          <div className="space-y-3">
+      <div className="grid gap-8 lg:grid-cols-[1fr_1fr]">
+        {/* Left: Form */}
+        <div className="space-y-4">
+          <Card title="config">
             {/* Asset Loader */}
-            <div className="flex gap-2">
+            <div className="mb-4">
               <AssetLoader
                 assetType="audit"
                 onAssetSelected={handleAssetLoaded}
                 onLoaded={handleAssetLoaded}
-                label="📦 Load Audit Asset"
+                label="load --asset"
               />
             </div>
 
             {/* Client Brief Card */}
             {loadedAsset && (
-              <ClientBriefCard asset={loadedAsset} />
+              <div className="mb-4">
+                <ClientBriefCard asset={loadedAsset} />
+              </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-3">
-              <div>
-                <label className="text-xs text-gray-400 block mb-1">
-                  Company Name *
-                </label>
-                <Input
-                  type="text"
-                  name="company_name"
-                  value={formData.company_name}
-                  onChange={handleChange}
-                  required
-                  placeholder="e.g., RockSpring Capital"
-                />
-              </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <Input
+                label="company_name"
+                name="company_name"
+                value={formData.company_name}
+                onChange={handleChange}
+                required
+                placeholder="e.g., RockSpring Capital"
+              />
 
-              <div>
-                <label className="text-xs text-gray-400 block mb-1">
-                  Website URL *
-                </label>
-                <Input
-                  type="url"
-                  name="website_url"
-                  value={formData.website_url}
-                  onChange={handleChange}
-                  required
-                  placeholder="https://example.com"
-                />
-              </div>
+              <Input
+                label="website_url"
+                name="website_url"
+                type="url"
+                value={formData.website_url}
+                onChange={handleChange}
+                required
+                placeholder="https://example.com"
+              />
 
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs text-gray-400 block mb-1">
-                    Industry *
-                  </label>
-                  <Input
-                    type="text"
-                    name="industry"
-                    value={formData.industry}
-                    onChange={handleChange}
-                    required
-                    placeholder="e.g., Real Estate"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs text-gray-400 block mb-1">
-                    Geography *
-                  </label>
-                  <Input
-                    type="text"
-                    name="geography"
-                    value={formData.geography}
-                    onChange={handleChange}
-                    required
-                    placeholder="e.g., United States"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs text-gray-400 block mb-1">
-                  Services (comma-separated) *
-                </label>
                 <Input
-                  type="text"
-                  name="services"
-                  value={formData.services}
+                  label="industry"
+                  name="industry"
+                  value={formData.industry}
                   onChange={handleChange}
                   required
-                  placeholder="e.g., Bridge Loans, Construction Financing"
+                  placeholder="e.g., Real Estate"
                 />
-              </div>
 
-              <div>
-                <label className="text-xs text-gray-400 block mb-1">
-                  Target Customer *
-                </label>
                 <Input
-                  type="text"
-                  name="target_customer"
-                  value={formData.target_customer}
+                  label="geography"
+                  name="geography"
+                  value={formData.geography}
                   onChange={handleChange}
                   required
-                  placeholder="e.g., Real estate developers"
+                  placeholder="e.g., United States"
                 />
               </div>
 
-              <div>
-                <label className="text-xs text-gray-400 block mb-1">
-                  Additional Notes
-                </label>
-                <Textarea
-                  name="notes"
-                  value={formData.notes}
-                  onChange={handleChange}
-                  placeholder="Any additional context..."
-                  rows={3}
-                  className="text-xs"
-                />
-              </div>
+              <Input
+                label="services"
+                name="services"
+                value={formData.services}
+                onChange={handleChange}
+                required
+                placeholder="Bridge Loans, Construction Financing"
+              />
 
-              <div className="border-t border-white/10 pt-4 mt-4">
-                <p className="text-xs text-gray-500 mb-3">Optional: Customize page types</p>
+              <Input
+                label="target_customer"
+                name="target_customer"
+                value={formData.target_customer}
+                onChange={handleChange}
+                required
+                placeholder="e.g., Real estate developers"
+              />
 
-                <div>
-                  <label className="text-xs text-gray-400 block mb-1">
-                    Locations (comma-separated)
-                  </label>
+              <Textarea
+                label="notes"
+                name="notes"
+                value={formData.notes}
+                onChange={handleChange}
+                placeholder="// optional context"
+                rows={3}
+              />
+
+              <div className="border-t border-slate-800 pt-4 mt-4">
+                <div className="text-xs text-slate-600 mb-3">// optional page_types</div>
+
+                <div className="space-y-3">
                   <Input
-                    type="text"
+                    label="locations"
                     name="locations"
                     value={formData.locations}
                     onChange={handleChange}
-                    placeholder="e.g., Houston, Dallas, Austin"
+                    placeholder="Houston, Dallas, Austin"
                   />
-                </div>
 
-                <div className="mt-3">
-                  <label className="text-xs text-gray-400 block mb-1">
-                    Loan Programs (comma-separated)
-                  </label>
                   <Input
-                    type="text"
+                    label="loan_programs"
                     name="loan_programs"
                     value={formData.loan_programs}
                     onChange={handleChange}
-                    placeholder="e.g., Bridge Loans, Construction Loans"
+                    placeholder="Bridge Loans, Construction Loans"
                   />
-                </div>
 
-                <div className="mt-3">
-                  <label className="text-xs text-gray-400 block mb-1">
-                    Asset Classes (comma-separated)
-                  </label>
                   <Input
-                    type="text"
+                    label="asset_classes"
                     name="asset_classes"
                     value={formData.asset_classes}
                     onChange={handleChange}
-                    placeholder="e.g., Commercial Real Estate, Multifamily"
+                    placeholder="Commercial Real Estate, Multifamily"
                   />
-                </div>
 
-                <div className="mt-3">
-                  <label className="text-xs text-gray-400 block mb-1">
-                    Use Cases (comma-separated)
-                  </label>
                   <Input
-                    type="text"
+                    label="use_cases"
                     name="use_cases"
                     value={formData.use_cases}
                     onChange={handleChange}
-                    placeholder="e.g., Fix and Flip, Ground-Up Development"
+                    placeholder="Fix and Flip, Ground-Up Development"
                   />
                 </div>
               </div>
@@ -386,34 +345,56 @@ export default function PSEOPage() {
               <Button
                 type="submit"
                 disabled={isLoading}
+                prefix="$"
                 className="w-full"
               >
-                {isLoading ? 'Generating...' : 'Generate pSEO Audit'}
+                {isLoading ? 'generating...' : 'generate --pseo'}
               </Button>
             </form>
 
             {error && (
-              <div className="text-xs text-red-300 bg-red-900/30 border border-red-800 rounded-xl px-3 py-2 whitespace-pre-wrap">
-                {error}
+              <div className="mt-4 text-xs text-red-400 border border-red-500/30 bg-red-500/5 p-3">
+                <span className="text-red-500">x</span> {error}
               </div>
             )}
-          </div>
-
-          {/* Right side: result */}
-          <div>
-            {!result && !isLoading && (
-              <div className="text-xs sm:text-sm text-gray-500">
-                Fill in your company details and click "Generate pSEO Audit" to see page types, URL structure, schema recommendations, and 25+ sample pages.
-              </div>
-            )}
-
-            {isLoading && <Spinner />}
-
-            {result && renderOutput()}
-          </div>
+          </Card>
         </div>
-      </Card>
-    </div>
+
+        {/* Right: Result */}
+        <div className="space-y-4">
+          {!result && !isLoading && (
+            <div className="border border-dashed border-slate-800 p-8 text-center">
+              <div className="text-slate-600 text-sm">
+                <span className="text-slate-700">-&gt;</span> fill in company details and run generate --pseo
+              </div>
+              <div className="text-xs text-slate-700 mt-2">
+                outputs: page types, URL structure, schema, 25+ sample pages
+              </div>
+            </div>
+          )}
+
+          {isLoading && (
+            <Card variant="terminal" title="~/pseo">
+              <div className="text-slate-500 text-sm">
+                <span className="text-emerald-500">-&gt;</span> generating pSEO strategy<span className="animate-pulse">...</span>
+              </div>
+              <Spinner />
+            </Card>
+          )}
+
+          {result && renderOutput()}
+        </div>
+      </div>
+
+      <div className="mt-16 text-xs text-slate-800">// end of file</div>
+    </main>
   );
 }
 
+export default function PSEOPage() {
+  return (
+    <Suspense fallback={<Spinner />}>
+      <PSEOContent />
+    </Suspense>
+  );
+}

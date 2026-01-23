@@ -1,3 +1,5 @@
+// app/content/page.tsx
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -15,25 +17,29 @@ import {
 } from "@/lib/types";
 import { ContentResultPanel } from "@/components/ContentResultPanel";
 
-const MODES: { id: ContentMode; label: string; description: string }[] = [
+const MODES: { id: ContentMode; label: string; command: string; description: string }[] = [
   {
     id: "press_release",
     label: "Press Release",
+    command: "--press",
     description: "Launches, funding, partnerships, milestones.",
   },
   {
     id: "article",
     label: "SEO Article",
+    command: "--article",
     description: "Long-form, keyword-driven operator content.",
   },
   {
     id: "landing",
     label: "Landing Page",
+    command: "--landing",
     description: "Hero, value props, CTAs, and sections.",
   },
   {
     id: "social",
     label: "Social Pack",
+    command: "--social",
     description: "LinkedIn, X thread, email, and bullets.",
   },
 ];
@@ -54,9 +60,7 @@ export default function ContentSuitePage() {
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [result, setResult] = useState<ContentGenerationResult | null>(
-    null
-  );
+  const [result, setResult] = useState<ContentGenerationResult | null>(null);
 
   // Clients
   const [clients, setClients] = useState<Client[]>([]);
@@ -116,165 +120,168 @@ export default function ContentSuitePage() {
   const modeMeta = MODES.find((m) => m.id === mode);
 
   return (
-    <div className="space-y-8">
-      <Card>
-        <div className="flex flex-col gap-2 mb-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-[#0A84FF]">
-              Content Suite
-            </h1>
-            <p className="text-xs sm:text-sm text-gray-400">
-              Press releases, SEO articles, landing pages, and social packs
-              — all wired to the same brain.
-            </p>
-          </div>
-        </div>
+    <main className="mx-auto w-full max-w-6xl px-4 py-12 font-mono">
+      {/* Header */}
+      <div className="mb-8">
+        <div className="text-xs text-slate-600 mb-2">// content.init()</div>
+        <h1 className="text-3xl font-bold text-white mb-2">Content Suite</h1>
+        <p className="text-slate-500 text-sm">
+          Press releases, SEO articles, landing pages, and social packs - all wired to the same brain.
+        </p>
+        <div className="mt-2 h-px w-24 bg-gradient-to-r from-pink-500 to-transparent" />
+      </div>
 
-        {/* Client Selector */}
-        <div className="mb-6">
-          <label className="text-xs text-gray-400 block mb-1">
-            Attach to Client (optional)
-          </label>
-          <select
-            value={selectedClientId}
-            onChange={(e) => setSelectedClientId(e.target.value)}
-            className="w-full sm:w-64 px-2 py-2 text-xs rounded-xl bg-black/40 border border-white/10 text-gray-100"
-          >
-            <option value="">Unassigned</option>
-            {clients.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </div>
+      <div className="grid gap-8 lg:grid-cols-[1fr_1fr]">
+        {/* Left: Form */}
+        <div className="space-y-4">
+          <Card title="config">
+            {/* Client Selector */}
+            <div className="mb-4">
+              <label className="block text-xs text-slate-500 mb-1.5">client_id</label>
+              <select
+                value={selectedClientId}
+                onChange={(e) => setSelectedClientId(e.target.value)}
+                className="w-full px-4 py-2.5 font-mono text-sm bg-slate-950 border border-slate-800 text-slate-200 focus:border-violet-500/50 focus:outline-none"
+              >
+                <option value="">null</option>
+                {clients.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-        {/* Mode selector */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          {MODES.map((m) => (
-            <button
-              key={m.id}
-              onClick={() => setMode(m.id)}
-              className={`px-3 py-2 rounded-full text-xs sm:text-sm border transition ${
-                mode === m.id
-                  ? "bg-[#0A84FF] text-white border-[#0A84FF]"
-                  : "bg-black/40 text-gray-300 border-white/10 hover:border-[#0A84FF]"
-              }`}
-            >
-              {m.label}
-            </button>
-          ))}
-        </div>
-        {modeMeta && (
-          <p className="text-[11px] text-gray-500 mb-4">
-            {modeMeta.description}
-          </p>
-        )}
+            {/* Mode selector */}
+            <div className="mb-4">
+              <div className="text-xs text-slate-600 mb-2">// mode.select()</div>
+              <div className="flex flex-wrap gap-2">
+                {MODES.map((m) => (
+                  <button
+                    key={m.id}
+                    onClick={() => setMode(m.id)}
+                    className={`px-3 py-2 text-xs border transition-all ${
+                      mode === m.id
+                        ? "border-violet-500 bg-violet-500/20 text-violet-300"
+                        : "border-slate-800 bg-slate-900/50 text-slate-400 hover:border-slate-700 hover:text-slate-300"
+                    }`}
+                  >
+                    {m.command}
+                  </button>
+                ))}
+              </div>
+              {modeMeta && (
+                <div className="text-xs text-slate-600 mt-2">
+                  // {modeMeta.description}
+                </div>
+              )}
+            </div>
 
-        {/* Form grid */}
-        <div className="grid gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,1.4fr)]">
-          {/* Left column – shared fields */}
-          <div className="space-y-3">
-            <div>
-              <label className="text-xs text-gray-400 block mb-1">
-                Company / Brand
-              </label>
+            <div className="space-y-4">
               <Input
+                label="company"
                 value={company}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCompany(e.target.value)}
               />
-            </div>
-            <div>
-              <label className="text-xs text-gray-400 block mb-1">
-                Audience
-              </label>
+
               <Input
+                label="audience"
                 value={audience}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAudience(e.target.value)}
-                placeholder="Who this is for — as specifically as possible"
+                placeholder="Who this is for - as specifically as possible"
               />
-            </div>
-            <div>
-              <label className="text-xs text-gray-400 block mb-1">
-                Brand Voice
-              </label>
+
               <Input
+                label="brand_voice"
                 value={brandVoice}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBrandVoice(e.target.value)}
-                placeholder="e.g. sharp, no-BS, operator-level, a bit playful…"
+                placeholder="e.g. sharp, no-BS, operator-level, a bit playful..."
               />
-            </div>
-            <div>
-              <label className="text-xs text-gray-400 block mb-1">
-                Primary Keyword / Topic
-              </label>
+
               <Input
+                label="primary_keyword"
                 value={primaryKeyword}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPrimaryKeyword(e.target.value)}
                 placeholder="e.g. SEO audit for B2B SaaS, digital growth OS, etc."
               />
-            </div>
-            <div>
-              <label className="text-xs text-gray-400 block mb-1">
-                URL (optional)
-              </label>
+
               <Input
+                label="url"
                 value={url}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUrl(e.target.value)}
                 placeholder="Page or product URL to align around"
               />
-            </div>
-          </div>
 
-          {/* Right column – mode-specific notes */}
-          <div className="space-y-3">
-            <div>
-              <label className="text-xs text-gray-400 block mb-1">
-                Extra Instructions / Raw Notes
-              </label>
               <Textarea
-                rows={7}
+                label="notes"
+                rows={5}
                 value={notes}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNotes(e.target.value)}
                 placeholder={
                   mode === "press_release"
-                    ? "What is the actual announcement? Any numbers (ARR, growth, clients), dates, names, etc."
+                    ? "// announcement details, numbers (ARR, growth), dates, names..."
                     : mode === "article"
-                    ? "Outline ideas, subtopics, POV you want to emphasize, examples, case studies, etc."
+                    ? "// outline ideas, subtopics, POV, examples, case studies..."
                     : mode === "landing"
-                    ? "Offer details, price/plan info, risk reversal, what makes this different."
-                    : "Key beats to hit in social, what you want people to think/feel/do."
+                    ? "// offer details, price/plan info, risk reversal, differentiators..."
+                    : "// key beats for social, what you want people to think/feel/do..."
                 }
               />
-            </div>
 
-            <Button
-              className="w-full"
-              disabled={loading || !company.trim() || !primaryKeyword.trim()}
-              onClick={generate}
-            >
-              {loading
-                ? "Cooking content…"
-                : `Generate ${modeMeta?.label ?? "Content"}`}
-            </Button>
+              <Button
+                className="w-full"
+                disabled={loading || !company.trim() || !primaryKeyword.trim()}
+                onClick={generate}
+                prefix="$"
+              >
+                {loading ? "generating..." : `generate ${modeMeta?.command ?? "--content"}`}
+              </Button>
 
-            {error && (
-              <div className="text-xs text-red-300 bg-red-900/30 border border-red-800 rounded-xl px-3 py-2 whitespace-pre-wrap">
-                {error}
+              {error && (
+                <div className="text-xs text-red-400 border border-red-500/30 bg-red-500/5 p-3">
+                  <span className="text-red-500">x</span> {error}
+                </div>
+              )}
+
+              <div className="text-xs text-slate-600">
+                // paste audited insights or keyword outputs into notes to steer output
               </div>
-            )}
-
-            <p className="text-[10px] text-gray-500">
-              Powered by Claude 3.5 Sonnet. You can paste audited insights or
-              keyword outputs into the notes to steer the output harder.
-            </p>
-          </div>
+            </div>
+          </Card>
         </div>
-      </Card>
 
-      {loading && <Spinner />}
-      <ContentResultPanel result={result} clientId={selectedClientId || null} />
-    </div>
+        {/* Right: Result */}
+        <div className="space-y-4">
+          {!result && !loading && (
+            <div className="border border-dashed border-slate-800 p-8 text-center">
+              <div className="text-slate-600 text-sm">
+                <span className="text-slate-700">-&gt;</span> select mode and run generate {modeMeta?.command ?? "--content"}
+              </div>
+              <div className="text-xs text-slate-700 mt-2">
+                outputs: {modeMeta?.label.toLowerCase() ?? "content"} ready for deployment
+              </div>
+            </div>
+          )}
+
+          {loading && (
+            <Card variant="terminal" title="~/content">
+              <div className="text-slate-500 text-sm">
+                <span className="text-emerald-500">-&gt;</span> generating {modeMeta?.label.toLowerCase() ?? "content"}<span className="animate-pulse">...</span>
+              </div>
+              <Spinner />
+            </Card>
+          )}
+
+          {result && (
+            <div>
+              <div className="text-xs text-slate-600 mb-4">// content.output</div>
+              <ContentResultPanel result={result} clientId={selectedClientId || null} />
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-16 text-xs text-slate-800">// end of file</div>
+    </main>
   );
 }
-

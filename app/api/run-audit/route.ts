@@ -1,24 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runAuditAnalysisLLM, safeParseJsonFromText } from "@/lib/llm";
+import { parseJsonBody, errorResponse, getErrorMessage } from "@/lib/api-utils";
+
+interface AuditRequestBody {
+  url?: string;
+}
+
+interface ScanPayload {
+  rawScan?: string;
+  scan?: string;
+  raw?: string;
+  keywordMetrics?: Record<string, unknown>;
+  keywords?: Record<string, unknown>;
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json().catch(() => ({}));
+    const { data: body, error: parseError } = await parseJsonBody<AuditRequestBody>(req);
+
+    if (parseError || !body) {
+      return errorResponse(parseError || "Invalid request body", 400);
+    }
+
     const url = typeof body.url === "string" ? body.url.trim() : "";
 
     if (!url) {
-      return NextResponse.json(
-        { error: "Missing required field: url" },
-        { status: 400 }
-      );
+      return errorResponse("Missing required field: url", 400);
     }
 
     // ----------------------------------------
     // 1) Call /api/run-scan to get raw scan data
     // ----------------------------------------
     let rawScan = "";
-    let keywordMetrics: any = null;
-    let scanPayload: any = null;
+    let keywordMetrics: Record<string, unknown> | null = null;
+    let scanPayload: ScanPayload | null = null;
 
     try {
       const origin = req.nextUrl.origin;
@@ -32,7 +47,7 @@ export async function POST(req: NextRequest) {
       if (!scanRes.ok) {
         console.error("[run-audit] /api/run-scan failed:", scanText);
       } else {
-        scanPayload = JSON.parse(scanText);
+        scanPayload = JSON.parse(scanText) as ScanPayload;
         rawScan =
           scanPayload?.rawScan ||
           scanPayload?.scan ||
@@ -174,12 +189,9 @@ Requirements:
       structuredAudit,
       keywordMetrics,
     });
-  } catch (err: any) {
+  } catch (err) {
     console.error("[run-audit] Fatal error:", err);
-    return NextResponse.json(
-      { error: err?.message || "Audit failed" },
-      { status: 500 }
-    );
+    return errorResponse(getErrorMessage(err));
   }
 }
 

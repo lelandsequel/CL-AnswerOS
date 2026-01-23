@@ -21,9 +21,56 @@ export interface StructuredAuditSection {
   score?: number;
 }
 
+export interface StructuredAudit {
+  overview?: {
+    domain: string;
+    current_state: string;
+    opportunity_rating: "Low" | "Medium" | "High";
+    raw_score: number;
+  };
+  core_issues?: Array<{
+    category: "Technical" | "Content" | "AEO" | "Conversion" | "Brand";
+    severity: "Low" | "Medium" | "High" | "Critical";
+    symptoms: string[];
+    business_impact: string;
+  }>;
+  aeo_opportunities?: Array<{
+    focus: string;
+    tactics: string[];
+    expected_impact: string;
+  }>;
+  content_playbook?: {
+    positioning_statement: string;
+    key_messaging_pillars: string[];
+    content_pillars: string[];
+    target_persona: {
+      summary: string;
+      pain_points: string[];
+    };
+  };
+  quick_wins_48h?: Array<{
+    action: string;
+    impact_score: number;
+    effort_level: "Low" | "Medium" | "High";
+  }>;
+  roadmap_30_60_90?: {
+    "30_days": { theme: string; initiatives: string[] };
+    "60_days": { theme: string; initiatives: string[] };
+    "90_days": { theme: string; initiatives: string[] };
+  };
+  investment_outlook?: {
+    recommended_budget_range: string;
+    projected_roi: string;
+    notes?: string;
+  };
+  // Fallback fields for parsing errors
+  parsingFallback?: boolean;
+  rawText?: string;
+}
+
 export interface AuditResponse {
   rawScan: string;
-  structuredAudit: StructuredAuditSection[] | any;
+  structuredAudit: StructuredAudit | StructuredAuditSection[];
   keywordMetrics?: KeywordMetric[] | null;
 }
 
@@ -34,7 +81,7 @@ export interface LegacyAuditRecord {
   sass: number;
   createdAt: string;
   rawScan?: string;
-  structuredAudit?: StructuredAuditSection[] | any;
+  structuredAudit?: StructuredAudit | StructuredAuditSection[];
   keywordMetrics?: KeywordMetric[];
 }
 
@@ -290,7 +337,7 @@ export interface OperatorReport {
 export interface GenerateReportRequestBody {
   url: string;
   clientName?: string;
-  structuredAudit: any;
+  structuredAudit: StructuredAudit | StructuredAuditSection[];
   notes?: string;
   sassLevel?: number; // 1–10
   chaosLevel?: number; // 1–10
@@ -306,13 +353,41 @@ export interface GenerateReportResponseBody {
 // CLIENT ASSETS TYPES
 // ======================================================================
 
-export interface ClientAsset {
+// Asset payload types for different asset kinds
+export type AssetPayload =
+  | AuditAssetPayload
+  | KeywordAssetPayload
+  | ReportAssetPayload
+  | Record<string, unknown>; // Fallback for custom payloads
+
+export interface AuditAssetPayload {
+  url: string;
+  rawScan?: string;
+  structuredAudit: StructuredAudit | StructuredAuditSection[];
+  keywordMetrics?: KeywordMetric[] | null;
+}
+
+export interface KeywordAssetPayload {
+  seedKeyword?: string;
+  url?: string;
+  ideas?: KeywordIdea[];
+  clusters?: KeywordCluster[];
+}
+
+export interface ReportAssetPayload {
+  boardSummary?: string;
+  whiteboardRoast?: string;
+  moneyboard?: string;
+  subjectLine?: string;
+}
+
+export interface ClientAsset<T extends AssetPayload = AssetPayload> {
   id: string;
   clientId?: string | null;
   type: string; // "audit", "lelandized_report", "keyword_research", etc.
   title: string;
   summary: string;
-  payload: any; // The actual data (audit, report, keywords, etc.)
+  payload: T;
   tags: string[];
   createdAt: string;
   updatedAt: string;

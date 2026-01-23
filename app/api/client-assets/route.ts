@@ -1,6 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServer } from "@/lib/supabaseServer";
-import { ClientAsset } from "@/lib/types";
+import { ClientAsset, AssetPayload } from "@/lib/types";
+
+// Database row type from Supabase
+interface ClientAssetRow {
+  id: string;
+  client_id: string | null;
+  type: string;
+  title: string;
+  summary: string;
+  payload: AssetPayload;
+  tags: string[];
+  created_at: string;
+  updated_at: string;
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -27,7 +40,7 @@ export async function GET(req: NextRequest) {
 
     if (error) throw error;
 
-    const assets: ClientAsset[] = (data || []).map((row: any) => ({
+    const assets: ClientAsset[] = (data || []).map((row: ClientAssetRow) => ({
       id: row.id,
       clientId: row.client_id || null,
       type: row.type,
@@ -40,19 +53,16 @@ export async function GET(req: NextRequest) {
     }));
 
     return NextResponse.json(assets);
-  } catch (err: any) {
+  } catch (err) {
     console.error("[client-assets] GET error:", err);
-    return NextResponse.json(
-      { error: err?.message || "Failed to fetch client assets" },
-      { status: 500 }
-    );
+    const message = err instanceof Error ? err.message : "Failed to fetch client assets";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json().catch(() => ({} as any));
-    console.log("[Client Assets POST] Received body:", body);
+    const body = await req.json().catch(() => ({}));
 
     const clientId = body.clientId ? String(body.clientId).trim() : null;
     const type = String(body.type || "").trim();
@@ -61,10 +71,7 @@ export async function POST(req: NextRequest) {
     const payload = body.payload || {};
     const tags = Array.isArray(body.tags) ? body.tags : [];
 
-    console.log("[Client Assets POST] Parsed data:", { clientId, type, title, summary, tagsCount: tags.length });
-
     if (!type || !title) {
-      console.log("[Client Assets POST] Missing required fields:", { type, title });
       return NextResponse.json(
         { error: "type and title are required" },
         { status: 400 }
@@ -104,11 +111,9 @@ export async function POST(req: NextRequest) {
     };
 
     return NextResponse.json({ asset });
-  } catch (err: any) {
+  } catch (err) {
     console.error("[client-assets] POST error:", err);
-    return NextResponse.json(
-      { error: err?.message || "Failed to save client asset" },
-      { status: 500 }
-    );
+    const message = err instanceof Error ? err.message : "Failed to save client asset";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

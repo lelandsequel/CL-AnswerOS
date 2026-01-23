@@ -16,12 +16,8 @@ type ClientAsset = {
 };
 
 type AssetsResponse =
-  | {
-      data: ClientAsset[];
-    }
-  | {
-      error: string;
-    };
+  | { data: ClientAsset[] }
+  | { error: string };
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -29,6 +25,20 @@ export default function DashboardPage() {
   const [assetsError, setAssetsError] = useState<string | null>(null);
   const [loadingAssets, setLoadingAssets] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
+  const [showCursor, setShowCursor] = useState(true);
+  const [initComplete, setInitComplete] = useState(false);
+
+  // Blinking cursor effect
+  useEffect(() => {
+    const interval = setInterval(() => setShowCursor(c => !c), 530);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Boot sequence
+  useEffect(() => {
+    const timer = setTimeout(() => setInitComplete(true), 800);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleRunDemo = async () => {
     setDemoLoading(true);
@@ -50,21 +60,12 @@ export default function DashboardPage() {
       try {
         setLoadingAssets(true);
         setAssetsError(null);
-
-        const res = await fetch('/api/client-assets', {
-          method: 'GET',
-        });
-
+        const res = await fetch('/api/client-assets', { method: 'GET' });
         const json = (await res.json()) as AssetsResponse;
-
         if (!res.ok || 'error' in json) {
-          throw new Error(
-            'error' in json ? json.error : 'Failed to load assets',
-          );
+          throw new Error('error' in json ? json.error : 'Failed to load assets');
         }
-
         const data = json.data || [];
-        // newest first, top 5
         const sorted = data
           .slice()
           .sort((a, b) => {
@@ -73,237 +74,227 @@ export default function DashboardPage() {
             return tb - ta;
           })
           .slice(0, 5);
-
         setAssets(sorted);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Dashboard assets error:', err);
-        setAssetsError(
-          err?.message || 'Unable to load recent assets right now.',
-        );
+        setAssetsError(err instanceof Error ? err.message : 'Unable to load assets.');
       } finally {
         setLoadingAssets(false);
       }
     };
-
     fetchAssets();
   }, []);
 
   const totalAssets = assets.length;
-  const hasAssets = totalAssets > 0;
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 py-8">
-      {/* Top welcome / summary */}
-      <section className="rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-950 via-slate-950/95 to-slate-900/90 p-6 shadow-lg shadow-black/40">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold text-slate-50">
-              Welcome back to C&L Answer OS
-            </h1>
-            <p className="mt-1 max-w-xl text-sm text-slate-400">
-              Audit, AEO, client assets and prospecting — all wired into one
-              control panel. Pick up where you left off or spin up something
-              new.
-            </p>
-          </div>
-          <div className="flex flex-col items-end gap-2 text-right text-xs text-slate-400">
-            <span className="text-[11px] uppercase tracking-wide text-slate-500">
-              Snapshot
-            </span>
-            <div className="flex flex-wrap items-center gap-3 text-xs">
-              <span className="rounded-full border border-slate-700 bg-slate-900/80 px-3 py-1 text-slate-200">
-                Assets: <span className="font-semibold">{totalAssets}</span>
-              </span>
-              <span className="rounded-full border border-slate-700 bg-slate-900/80 px-3 py-1 text-slate-200">
-                Modules: <span className="font-semibold">Audit · AEO · Leads</span>
-              </span>
-            </div>
-          </div>
+    <main className="mx-auto w-full max-w-6xl px-4 py-12 font-mono">
+      {/* Hero - Code block style */}
+      <section className="mb-12">
+        <div className="mb-6 text-xs text-slate-600">// system.init()</div>
+
+        <div className={`transition-opacity duration-500 ${initComplete ? 'opacity-100' : 'opacity-0'}`}>
+          <pre className="text-slate-500 text-sm mb-4">
+{`const `}<span className="text-violet-400">answerOS</span>{` = {`}
+          </pre>
+
+          <h1 className="text-5xl md:text-7xl font-bold text-white tracking-tight mb-2 ml-4">
+            C&L Answer OS
+            <span className={`inline-block w-[4px] h-12 md:h-16 bg-violet-500 ml-2 align-middle ${showCursor ? 'opacity-100' : 'opacity-0'}`} />
+          </h1>
+
+          <pre className="text-slate-500 text-sm mt-4">
+{`  `}<span className="text-slate-400">status</span>: <span className="text-emerald-400">&apos;ready&apos;</span>,
+{`  `}<span className="text-slate-400">modules</span>: <span className="text-amber-400">6</span>,
+{`  `}<span className="text-slate-400">assets</span>: <span className="text-amber-400">{totalAssets}</span>
+{`};`}
+          </pre>
         </div>
+
+        <p className="mt-8 text-slate-400 max-w-xl text-lg leading-relaxed">
+          Audit. Optimize. Generate. Deploy.
+        </p>
+
+        <div className="mt-2 h-px w-32 bg-gradient-to-r from-violet-500 to-transparent" />
       </section>
 
-      {/* Quick actions */}
-      <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {/* Action buttons - Terminal style */}
+      <section className="mb-16 flex flex-wrap gap-3">
         <button
           onClick={handleRunDemo}
           disabled={demoLoading}
-          className="rounded-2xl border border-green-500/40 bg-gradient-to-br from-green-950/40 to-emerald-950/40 p-4 text-left transition-all hover:border-green-500/60 hover:from-green-950/60 hover:to-emerald-950/60 disabled:opacity-50"
+          className="group relative border border-violet-500/50 bg-violet-500/10 px-6 py-3 text-sm text-violet-300 transition-all hover:bg-violet-500/20 hover:border-violet-500 disabled:opacity-50"
         >
-          <div className="text-lg font-semibold text-green-300">
-            {demoLoading ? '⏳ Loading...' : '🚀 Run Demo'}
-          </div>
-          <p className="mt-1 text-xs text-green-200/70">
-            See the full platform in action with pre-loaded demo data.
-          </p>
+          <span className="text-violet-500 mr-2">$</span>
+          {demoLoading ? (
+            <span className="text-slate-400">executing<span className="animate-pulse">...</span></span>
+          ) : (
+            <>run --demo</>
+          )}
         </button>
-        <QuickAction
+
+        <Link
           href="/audit"
-          label="Run Site Audit"
-          description="Scan a site, generate a structured audit and detailed report."
-        />
-        <QuickAction
-          href="/leads"
-          label="Prospect Leads"
-          description="Use DataForSEO to pull lead lists by niche + city."
-        />
-        <QuickAction
-          href="/assets"
-          label="View Asset Library"
-          description="See all saved audits, reports, lead lists and more."
-        />
+          className="group border border-slate-700 bg-slate-800/50 px-6 py-3 text-sm text-slate-300 transition-all hover:bg-slate-800 hover:border-slate-600"
+        >
+          <span className="text-emerald-500 mr-2">$</span>
+          audit --new
+        </Link>
+
+        <Link
+          href="/pseo"
+          className="group border border-slate-700 bg-slate-800/50 px-6 py-3 text-sm text-slate-300 transition-all hover:bg-slate-800 hover:border-slate-600"
+        >
+          <span className="text-amber-500 mr-2">$</span>
+          pseo --generate
+        </Link>
       </section>
 
-      {/* Two-column lower section */}
-      <section className="grid gap-6 lg:grid-cols-[2fr_1.2fr]">
-        {/* Recent assets */}
-        <div className="rounded-3xl border border-slate-800 bg-slate-950/90 p-6 shadow-lg shadow-black/40">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div>
-              <h2 className="text-sm font-semibold text-slate-50">
-                Recent Assets
-              </h2>
-              <p className="text-xs text-slate-400">
-                Latest audits, reports, lead lists and other saved outputs.
-              </p>
-            </div>
+      {/* Modules grid - File tree style */}
+      <section className="mb-16">
+        <div className="text-xs text-slate-600 mb-4">// modules.map()</div>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+          {[
+            { href: '/audit', label: 'audit', color: 'sky' },
+            { href: '/pseo', label: 'pseo', color: 'violet' },
+            { href: '/keywords', label: 'keywords', color: 'amber' },
+            { href: '/leads', label: 'leads', color: 'emerald' },
+            { href: '/content', label: 'content', color: 'pink' },
+            { href: '/assets', label: 'assets', color: 'slate' },
+          ].map((mod) => (
             <Link
-              href="/assets"
-              className="text-xs font-medium text-sky-300 hover:text-sky-200"
+              key={mod.href}
+              href={mod.href}
+              className="group border border-slate-800 bg-slate-900/50 p-4 transition-all hover:border-slate-700 hover:bg-slate-900"
             >
-              View all →
+              <div className="text-slate-600 text-xs mb-2">
+                <span className={`text-${mod.color}-500`}>01</span> file
+              </div>
+              <div className="text-white font-medium group-hover:text-violet-400 transition-colors">
+                {mod.label}<span className="text-slate-600">.ts</span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* Two column layout */}
+      <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
+        {/* Recent assets - Log style */}
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-xs text-slate-600">// assets.recent()</div>
+            <Link href="/assets" className="text-xs text-violet-500 hover:text-violet-400">
+              view all →
             </Link>
           </div>
 
-          {loadingAssets && (
-            <p className="py-4 text-xs text-slate-400">
-              Loading recent assets…
-            </p>
-          )}
+          <div className="border border-slate-800 bg-slate-950">
+            {/* Terminal header */}
+            <div className="flex items-center gap-2 px-4 py-2 border-b border-slate-800 bg-slate-900/50">
+              <div className="w-3 h-3 rounded-full bg-red-500/80" />
+              <div className="w-3 h-3 rounded-full bg-amber-500/80" />
+              <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
+              <span className="ml-2 text-xs text-slate-600">~/assets</span>
+            </div>
 
-          {assetsError && !loadingAssets && (
-            <p className="rounded-2xl border border-red-800/70 bg-red-950/70 px-3 py-2 text-xs text-red-100">
-              {assetsError}
-            </p>
-          )}
+            <div className="p-4 min-h-[280px]">
+              {loadingAssets && (
+                <div className="text-slate-500 text-sm">
+                  <span className="text-emerald-500">→</span> fetching assets<span className="animate-pulse">...</span>
+                </div>
+              )}
 
-          {!loadingAssets && !assetsError && !hasAssets && (
-            <p className="py-4 text-xs text-slate-500">
-              No assets yet. Run an audit, generate content, or save a lead list
-              to see it appear here.
-            </p>
-          )}
+              {assetsError && !loadingAssets && (
+                <div className="text-red-400 text-sm">
+                  <span className="text-red-500">✗</span> error: {assetsError}
+                </div>
+              )}
 
-          {!loadingAssets && !assetsError && hasAssets && (
-            <ul className="divide-y divide-slate-800 text-xs">
-              {assets.map((asset) => (
-                <li
-                  key={asset.id}
-                  className="flex items-start justify-between gap-3 py-3"
-                >
-                  <div className="flex flex-col gap-1">
+              {!loadingAssets && !assetsError && assets.length === 0 && (
+                <div className="text-slate-600 text-sm">
+                  <span className="text-slate-500">→</span> no assets found
+                  <br />
+                  <span className="text-slate-700">  run `audit --new` to get started</span>
+                </div>
+              )}
+
+              {!loadingAssets && !assetsError && assets.length > 0 && (
+                <div className="space-y-1">
+                  {assets.map((asset, i) => (
                     <Link
+                      key={asset.id}
                       href={`/assets/${asset.id}`}
-                      className="font-medium text-sky-300 hover:text-sky-200"
+                      className="group flex items-start gap-3 py-2 text-sm hover:bg-slate-900/50 -mx-2 px-2 transition-colors"
                     >
-                      {asset.title || 'Untitled'}
-                    </Link>
-                    <p className="text-slate-400">
-                      {asset.summary || 'No description'}
-                    </p>
-                    {asset.tags && asset.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 pt-1">
-                        {asset.tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] text-slate-300"
-                          >
-                            {tag}
-                          </span>
-                        ))}
+                      <span className="text-slate-700 w-4 text-right shrink-0">{i + 1}</span>
+                      <span className="text-emerald-500 shrink-0">→</span>
+                      <div className="min-w-0 flex-1">
+                        <span className="text-slate-300 group-hover:text-violet-400 transition-colors truncate block">
+                          {asset.title || 'untitled'}
+                        </span>
+                        <span className="text-slate-600 text-xs truncate block">
+                          {asset.summary || 'no description'}
+                        </span>
                       </div>
-                    )}
-                  </div>
-                  <span className="whitespace-nowrap rounded-full bg-slate-900 px-2 py-1 text-[10px] text-slate-400">
-                    {asset.type || 'asset'}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+                      <span className="text-slate-700 text-xs shrink-0">
+                        [{asset.type || 'asset'}]
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
 
-        {/* Right sidebar: Quick stats */}
-        <div className="flex flex-col gap-4">
-          {/* Stats card */}
-          <div className="rounded-3xl border border-slate-800 bg-slate-950/90 p-6 shadow-lg shadow-black/40">
-            <h3 className="mb-4 text-sm font-semibold text-slate-50">
-              Quick Stats
-            </h3>
-            <div className="space-y-3 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-400">Total Assets</span>
-                <span className="font-semibold text-sky-300">{totalAssets}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-400">Active Modules</span>
-                <span className="font-semibold text-sky-300">6</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-400">Status</span>
-                <span className="rounded-full bg-green-900/40 px-2 py-1 text-green-300">
-                  Ready
-                </span>
+        {/* Stats - Config style */}
+        <section>
+          <div className="text-xs text-slate-600 mb-4">// config.json</div>
+
+          <div className="border border-slate-800 bg-slate-950 p-6">
+            <pre className="text-sm">
+<span className="text-slate-600">{`{`}</span>
+{`
+  `}<span className="text-violet-400">&quot;system&quot;</span>: <span className="text-emerald-400">&quot;online&quot;</span>,
+{`
+  `}<span className="text-violet-400">&quot;assets&quot;</span>: <span className="text-amber-400">{totalAssets}</span>,
+{`
+  `}<span className="text-violet-400">&quot;modules&quot;</span>: <span className="text-amber-400">6</span>,
+{`
+  `}<span className="text-violet-400">&quot;version&quot;</span>: <span className="text-emerald-400">&quot;2.0.0&quot;</span>
+<span className="text-slate-600">{`}`}</span>
+            </pre>
+
+            <div className="mt-6 pt-6 border-t border-slate-800">
+              <div className="text-xs text-slate-600 mb-3">// quick.links</div>
+              <div className="space-y-2">
+                {[
+                  { href: '/fix', label: 'fix-engine' },
+                  { href: '/tone-adjust', label: 'tone-adjust' },
+                  { href: '/press-release', label: 'press-release' },
+                  { href: '/deck-outline', label: 'deck-outline' },
+                ].map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="block text-sm text-slate-500 hover:text-violet-400 transition-colors"
+                  >
+                    <span className="text-slate-700 mr-2">→</span>
+                    {link.label}
+                  </Link>
+                ))}
               </div>
             </div>
           </div>
+        </section>
+      </div>
 
-          {/* Help card */}
-          <div className="rounded-3xl border border-slate-800 bg-slate-950/90 p-6 shadow-lg shadow-black/40">
-            <h3 className="mb-3 text-sm font-semibold text-slate-50">
-              Getting Started
-            </h3>
-            <ul className="space-y-2 text-xs text-slate-400">
-              <li>
-                <Link href="/audit" className="text-sky-300 hover:text-sky-200">
-                  → Run your first audit
-                </Link>
-              </li>
-              <li>
-                <Link href="/leads" className="text-sky-300 hover:text-sky-200">
-                  → Pull a lead list
-                </Link>
-              </li>
-              <li>
-                <Link href="/assets" className="text-sky-300 hover:text-sky-200">
-                  → Browse saved assets
-                </Link>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </section>
+      {/* Footer comment */}
+      <div className="mt-16 text-xs text-slate-800">
+        {`// end of file`}
+      </div>
     </main>
-  );
-}
-
-function QuickAction({
-  href,
-  label,
-  description,
-}: {
-  href: string;
-  label: string;
-  description: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className="group rounded-2xl border border-slate-800 bg-slate-950/60 p-4 transition-all hover:border-slate-700 hover:bg-slate-900/80"
-    >
-      <h3 className="font-semibold text-slate-50 group-hover:text-sky-300">
-        {label}
-      </h3>
-      <p className="mt-1 text-xs text-slate-400">{description}</p>
-    </Link>
   );
 }

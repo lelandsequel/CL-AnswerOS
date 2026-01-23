@@ -95,7 +95,7 @@ export function AssetLoader({
                 type="text"
                 placeholder="Search assets..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
                 className="text-xs h-8"
                 autoFocus
               />
@@ -120,7 +120,7 @@ export function AssetLoader({
 
             {!loading && filteredAssets.length === 0 && assets.length > 0 && (
               <p className="text-xs text-gray-400 p-3">
-                No assets match "{searchQuery}"
+                No assets match &ldquo;{searchQuery}&rdquo;
               </p>
             )}
 

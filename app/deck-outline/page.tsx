@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ import { DemoFlowStepper } from '@/components/DemoFlowStepper';
 import { auditAssetToDeckOutlineForm } from '@/lib/asset-mapper';
 import type { ClientAsset } from '@/lib/types';
 
-export default function DeckOutlinePage() {
+function DeckOutlineContent() {
   const searchParams = useSearchParams();
   const assetId = searchParams.get('asset');
   const isDemo = searchParams.get('demo') === '1';
@@ -328,7 +328,7 @@ export default function DeckOutlinePage() {
           <div>
             {!result && !isLoading && (
               <div className="text-xs sm:text-sm text-gray-500">
-                Fill in your client details and click "Generate Deck Outline" to see a 14-slide proposal deck with speaker notes and visual suggestions.
+                Fill in your client details and click &ldquo;Generate Deck Outline&rdquo; to see a 14-slide proposal deck with speaker notes and visual suggestions.
               </div>
             )}
 
@@ -339,6 +339,14 @@ export default function DeckOutlinePage() {
         </div>
       </Card>
     </div>
+  );
+}
+
+export default function DeckOutlinePage() {
+  return (
+    <Suspense fallback={<Spinner />}>
+      <DeckOutlineContent />
+    </Suspense>
   );
 }
 

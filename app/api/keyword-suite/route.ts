@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { runKeywordSuiteLLM, safeParseJsonFromText } from "@/lib/llm";
+import { runKeywordSuiteLLM, requireJsonFromText } from "@/lib/llm";
 
 type KeywordSuiteResult = {
   primary_keywords: string[];
@@ -21,20 +21,21 @@ type KeywordSuiteResult = {
   }[];
 };
 
-function extractJsonBlock(text: string): any {
-  const first = text.indexOf("{");
-  const last = text.lastIndexOf("}");
-  if (first === -1 || last === -1 || last <= first) {
-    throw new Error("No JSON object found in LLM response");
-  }
-  const jsonString = text.slice(first, last + 1);
-  return JSON.parse(jsonString);
+import { parseJsonBody, errorResponse, getErrorMessage } from "@/lib/api-utils";
+
+interface KeywordSuiteRequestBody {
+  auditText?: string;
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json().catch(() => ({}));
-    const { auditText } = body as { auditText?: string };
+    const { data: body, error: parseError } = await parseJsonBody<KeywordSuiteRequestBody>(req);
+
+    if (parseError || !body) {
+      return errorResponse(parseError || "Invalid request body", 400);
+    }
+
+    const { auditText } = body;
 
     if (!auditText || auditText.trim().length < 40) {
       return NextResponse.json(
@@ -98,7 +99,7 @@ RULES:
 
     let parsed: KeywordSuiteResult;
     try {
-      parsed = extractJsonBlock(rawText);
+      parsed = requireJsonFromText(rawText) as KeywordSuiteResult;
     } catch (err) {
       console.error("Failed to parse JSON from LLM response:", err, rawText);
       return NextResponse.json(
@@ -111,12 +112,9 @@ RULES:
     }
 
     return NextResponse.json(parsed);
-  } catch (err: any) {
+  } catch (err) {
     console.error("keyword-suite route error:", err);
-    return NextResponse.json(
-      { error: err?.message || "Unexpected server error in keyword-suite" },
-      { status: 500 }
-    );
+    return errorResponse(getErrorMessage(err));
   }
 }
 

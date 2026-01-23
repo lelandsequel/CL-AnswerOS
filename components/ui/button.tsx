@@ -2,24 +2,36 @@
 import { cn } from "@/lib/utils";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "ghost" | "outline";
+  variant?: "primary" | "secondary" | "ghost" | "outline";
+  prefix?: string;
 }
 
 export function Button({
   className,
   children,
   variant = "primary",
+  prefix,
   ...props
 }: ButtonProps) {
   const base =
-    "px-4 py-2 rounded-xl text-sm font-semibold tracking-wide transition-all duration-200";
+    "px-5 py-2.5 text-sm font-medium font-mono transition-all duration-200 disabled:opacity-50";
+
   const variants: Record<string, string> = {
     primary:
-      "bg-[#0A84FF] hover:bg-[#1A9CFF] text-white shadow-[0_0_20px_rgba(0,132,255,0.5)] hover:shadow-[0_0_26px_rgba(0,132,255,0.8)]",
+      "border border-violet-500/50 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20 hover:border-violet-500",
+    secondary:
+      "border border-slate-700 bg-slate-800/50 text-slate-300 hover:bg-slate-800 hover:border-slate-600",
     ghost:
-      "bg-transparent border border-white/10 hover:border-[#0A84FF]/70 text-gray-200 hover:text-white",
+      "border border-transparent bg-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/50",
     outline:
-      "bg-black/40 border border-[#0A84FF]/60 text-[#0A84FF] hover:bg-[#0A84FF]/10",
+      "border border-slate-700 bg-transparent text-slate-300 hover:bg-slate-800/50 hover:border-slate-600",
+  };
+
+  const prefixColors: Record<string, string> = {
+    primary: "text-violet-500",
+    secondary: "text-emerald-500",
+    ghost: "text-slate-600",
+    outline: "text-amber-500",
   };
 
   return (
@@ -27,8 +39,8 @@ export function Button({
       className={cn(base, variants[variant], className)}
       {...props}
     >
+      {prefix && <span className={cn("mr-2", prefixColors[variant])}>{prefix}</span>}
       {children}
     </button>
   );
 }
-
