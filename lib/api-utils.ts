@@ -2,6 +2,7 @@
 // Shared utilities for API routes
 
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
 /**
  * Safely parse JSON from request body.
@@ -15,6 +16,53 @@ export async function parseJsonBody<T = Record<string, unknown>>(
     return { data: data as T, error: null };
   } catch {
     return { data: null, error: "Invalid JSON in request body" };
+  }
+}
+
+/**
+ * Validation result - either success with data, or error response
+ */
+export type ValidationResult<T> =
+  | { success: true; data: T; error: null }
+  | { success: false; data: null; error: NextResponse };
+
+/**
+ * Parse and validate request body with Zod schema.
+ */
+export async function parseAndValidate<T extends z.ZodSchema>(
+  req: NextRequest,
+  schema: T
+): Promise<ValidationResult<z.infer<T>>> {
+  try {
+    const body = await req.json();
+    const result = schema.safeParse(body);
+
+    if (!result.success) {
+      const errors = result.error.issues.map((i) => ({
+        field: i.path.join("."),
+        message: i.message,
+      }));
+
+      return {
+        success: false,
+        data: null,
+        error: NextResponse.json(
+          { error: "Validation failed", details: errors },
+          { status: 400 }
+        ),
+      };
+    }
+
+    return { success: true, data: result.data, error: null };
+  } catch {
+    return {
+      success: false,
+      data: null,
+      error: NextResponse.json(
+        { error: "Invalid JSON in request body" },
+        { status: 400 }
+      ),
+    };
   }
 }
 

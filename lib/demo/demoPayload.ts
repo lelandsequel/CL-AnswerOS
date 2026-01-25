@@ -64,17 +64,45 @@ ${structuredFields.aeo_opportunities?.map(opp => `- ${opp}`).join('\n')}
     structuredAudit: {
       summary: 'Rockspring Capital is a real estate finance company with strong market position but limited organic visibility.',
       overview: {
+        domain: 'rockspring.com',
         industry: 'Real Estate Finance',
         geography: 'US, California',
         company_name: 'Rockspring Capital',
+        current_state: 'Nationwide real estate finance lender with focus on California market',
       },
-      core_issues: structuredFields.core_issues,
-      quick_wins_48h: structuredFields.quick_wins,
-      aeo_opportunities: structuredFields.aeo_opportunities,
+      core_issues: (structuredFields.core_issues || []).map((issue, idx) => ({
+        title: issue,
+        severity: idx === 0 ? 'CRITICAL' : idx < 2 ? 'HIGH' : 'MEDIUM',
+        description: issue,
+        recommendation: `Address: ${issue}`,
+      })),
+      quick_wins_48h: (structuredFields.quick_wins || []).map(win => ({
+        title: win,
+        impact: 'HIGH',
+        effort: 'LOW',
+      })),
+      aeo_opportunities: (structuredFields.aeo_opportunities || []).map(opp => ({
+        title: opp,
+        description: opp,
+        priority: 'HIGH',
+      })),
       content_playbook: {
+        positioning_statement: 'Rockspring Capital is the trusted partner for real estate investors seeking fast, flexible financing solutions.',
+        key_messaging_pillars: [
+          'Fast funding in as little as 7 days',
+          'Flexible terms for fix & flip and bridge loans',
+          'Expert team with 20+ years experience',
+          'Nationwide coverage with local expertise',
+        ],
         content_pillars: structuredFields.services,
         target_persona: {
           summary: structuredFields.target_customer,
+          pain_points: [
+            'Traditional banks too slow for deal timelines',
+            'Complex approval processes delay closings',
+            'Lack of transparency on loan terms',
+            'Need reliable capital partner for multiple deals',
+          ],
         },
       },
     },

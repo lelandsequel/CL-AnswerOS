@@ -39,11 +39,20 @@ function PSEOContent() {
   const [result, setResult] = useState<PseoAuditResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isLLMError, setIsLLMError] = useState(false);
   const [copied, setCopied] = useState(false);
   const [loadedAsset, setLoadedAsset] = useState<ClientAsset | null>(null);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [assetLoading, setAssetLoading] = useState(false);
+
+  // Audit-driven strategy state
+  const [auditData, setAuditData] = useState<{
+    structuredAudit?: any;
+    rawScan?: string;
+    keywordMetrics?: any[];
+  } | null>(null);
+  const [useAuditStrategy, setUseAuditStrategy] = useState(false);
 
   // Auto-load asset from URL param
   useEffect(() => {
@@ -75,9 +84,25 @@ function PSEOContent() {
   };
 
   const handleAssetLoaded = (asset: ClientAsset) => {
-    const formData = auditAssetToPseoForm(asset);
-    setFormData(prev => ({ ...prev, ...formData }));
+    const formDataFromAsset = auditAssetToPseoForm(asset);
+    setFormData(prev => ({ ...prev, ...formDataFromAsset }));
     setLoadedAsset(asset);
+
+    // Store full audit data for audit-driven strategy
+    const payload = asset.payload as any;
+    if (payload?.structuredAudit && !payload.structuredAudit.parsingFallback) {
+      setAuditData({
+        structuredAudit: payload.structuredAudit,
+        rawScan: payload.rawScan,
+        keywordMetrics: payload.keywordMetrics,
+      });
+      // Auto-enable audit strategy when valid audit is loaded
+      setUseAuditStrategy(true);
+    } else {
+      setAuditData(null);
+      setUseAuditStrategy(false);
+    }
+
     setToastMessage(`loaded: ${asset.title}`);
     setToastType('success');
     setTimeout(() => setToastMessage(''), 3000);
@@ -87,6 +112,7 @@ function PSEOContent() {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    setIsLLMError(false);
 
     try {
       const payload: any = {
@@ -115,19 +141,28 @@ function PSEOContent() {
         payload.use_cases = formData.use_cases.split(',').map(s => s.trim()).filter(Boolean);
       }
 
+      // Include audit data if strategy enabled
+      if (useAuditStrategy && auditData) {
+        payload.structuredAudit = auditData.structuredAudit;
+        payload.rawScan = auditData.rawScan;
+        payload.keywordMetrics = auditData.keywordMetrics;
+        payload.useAuditDrivenStrategy = true;
+      }
+
       const response = await fetch('/api/pseo-audit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
+      const responseData = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate pSEO audit');
+        setIsLLMError(responseData.isLLMError || false);
+        throw new Error(responseData.error || 'Failed to generate pSEO audit');
       }
 
-      const auditResult = await response.json();
-      setResult(auditResult);
+      setResult(responseData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -143,7 +178,7 @@ function PSEOContent() {
     return (
       <Card variant="terminal" title="~/pseo/result">
         <div className="mb-4 flex items-center justify-between">
-          <div className="text-xs text-slate-600">// output.md</div>
+          <div className="text-xs text-slate-600">{'// output.md'}</div>
           <div className="flex gap-2">
             <Button
               variant="outline"
@@ -174,6 +209,34 @@ function PSEOContent() {
           </div>
         </div>
 
+        {/* Audit-Driven Strategy Metadata */}
+        {result.auditDrivenStrategy && (
+          <div className="mb-4 p-3 bg-violet-500/10 border border-violet-500/30 text-xs">
+            <div className="flex items-center gap-2 text-violet-300 mb-2">
+              <span className="text-violet-500">*</span> audit_driven_strategy: active
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-slate-400">
+              <div>
+                pages_generated: {result.pages.length}
+              </div>
+              <div>
+                quick_wins: {result.auditDrivenStrategy.quickWinPages.length}
+              </div>
+              <div>
+                aeo_focused: {result.auditDrivenStrategy.aeoFocusedPages.length}
+              </div>
+              <div>
+                validated: {result.pages.filter(p => p.generatedContent?.validationScore).length}
+              </div>
+            </div>
+            {result.pages.some(p => p.generatedContent?.corrected) && (
+              <div className="mt-2 text-amber-400">
+                {'// '}{result.pages.filter(p => p.generatedContent?.corrected).length} page(s) required correction
+              </div>
+            )}
+          </div>
+        )}
+
         <pre className="bg-slate-900/50 border border-slate-800 p-4 text-xs text-slate-300 overflow-auto max-h-96 whitespace-pre-wrap break-words font-mono">
           {output}
         </pre>
@@ -190,7 +253,7 @@ function PSEOContent() {
     <main className="mx-auto w-full max-w-6xl px-4 py-12 font-mono">
       {/* Header */}
       <div className="mb-8">
-        <div className="text-xs text-slate-600 mb-2">// pseo.init()</div>
+        <div className="text-xs text-slate-600 mb-2">{'// pseo.init()'}</div>
         <h1 className="text-3xl font-bold text-white mb-2">pSEO Generator</h1>
         <p className="text-slate-500 text-sm">
           Generate a programmatic SEO strategy with page types, URL structure, and sample pages.
@@ -304,8 +367,34 @@ function PSEOContent() {
                 rows={3}
               />
 
+              {/* Audit-Driven Strategy Toggle */}
+              {auditData && (
+                <div className="border-t border-slate-800 pt-4 mt-4">
+                  <label className="flex items-start gap-3 cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      checked={useAuditStrategy}
+                      onChange={(e) => setUseAuditStrategy(e.target.checked)}
+                      className="mt-1 rounded border-slate-700 bg-slate-900 text-violet-500 focus:ring-violet-500"
+                    />
+                    <div>
+                      <span className="text-sm text-slate-300 group-hover:text-white transition-colors">
+                        use_audit_driven_strategy
+                      </span>
+                      {/* eslint-disable-next-line react/jsx-no-comment-textnodes */}
+                      <p className="text-xs text-slate-600 mt-1">
+                        // LLM analyzes audit to recommend pages based on issues &amp; opportunities
+                      </p>
+                      <p className="text-xs text-emerald-500/70 mt-1">
+                        Generate → Validate → Correct pipeline with cross-model validation
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              )}
+
               <div className="border-t border-slate-800 pt-4 mt-4">
-                <div className="text-xs text-slate-600 mb-3">// optional page_types</div>
+                <div className="text-xs text-slate-600 mb-3">{'// optional page_types'}</div>
 
                 <div className="space-y-3">
                   <Input
@@ -353,8 +442,20 @@ function PSEOContent() {
             </form>
 
             {error && (
-              <div className="mt-4 text-xs text-red-400 border border-red-500/30 bg-red-500/5 p-3">
-                <span className="text-red-500">x</span> {error}
+              <div className="mt-4 text-xs border bg-red-500/5 p-3 space-y-2"
+                   style={{ borderColor: isLLMError ? 'rgba(251, 146, 60, 0.3)' : 'rgba(239, 68, 68, 0.3)' }}>
+                <div className="flex items-start gap-2">
+                  <span className={isLLMError ? 'text-amber-500' : 'text-red-500'}>
+                    {isLLMError ? '!' : 'x'}
+                  </span>
+                  <span className={isLLMError ? 'text-amber-400' : 'text-red-400'}>{error}</span>
+                </div>
+                {isLLMError && useAuditStrategy && (
+                  <p className="text-slate-500 pl-4">
+                    {/* eslint-disable-next-line react/jsx-no-comment-textnodes */}
+                    // Tip: Disable &quot;use_audit_driven_strategy&quot; to use manual mode
+                  </p>
+                )}
               </div>
             )}
           </Card>
@@ -375,8 +476,22 @@ function PSEOContent() {
 
           {isLoading && (
             <Card variant="terminal" title="~/pseo">
-              <div className="text-slate-500 text-sm">
-                <span className="text-emerald-500">-&gt;</span> generating pSEO strategy<span className="animate-pulse">...</span>
+              <div className="text-slate-500 text-sm space-y-2">
+                {useAuditStrategy ? (
+                  <>
+                    <div>
+                      <span className="text-violet-500">-&gt;</span> analyzing audit with LLM<span className="animate-pulse">...</span>
+                    </div>
+                    {/* eslint-disable-next-line react/jsx-no-comment-textnodes */}
+                    <div className="text-xs text-slate-600 pl-4">
+                      // Generate → Validate → Correct pipeline
+                    </div>
+                  </>
+                ) : (
+                  <div>
+                    <span className="text-emerald-500">-&gt;</span> generating pSEO strategy<span className="animate-pulse">...</span>
+                  </div>
+                )}
               </div>
               <Spinner />
             </Card>
@@ -386,7 +501,7 @@ function PSEOContent() {
         </div>
       </div>
 
-      <div className="mt-16 text-xs text-slate-800">// end of file</div>
+      <div className="mt-16 text-xs text-slate-800">{'// end of file'}</div>
     </main>
   );
 }

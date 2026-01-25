@@ -23,7 +23,11 @@ export type LLMTask =
   | "sales_proposal"
   | "sales_roi_calc"
   | "sales_outreach"
-  | "sales_emails";
+  | "sales_emails"
+  | "pseo_strategy"
+  | "pseo_generate"
+  | "pseo_validate"
+  | "pseo_correct";
 
 export interface LLMCallOptions {
   provider: LLMProvider;
@@ -66,6 +70,7 @@ const MODEL_IDS = {
 interface TaskModelConfig {
   primary: LLMCallOptions;
   fallback?: LLMCallOptions;
+  fallback2?: LLMCallOptions;
 }
 
 const TASK_MODELS: Record<LLMTask, TaskModelConfig> = {
@@ -343,6 +348,99 @@ const TASK_MODELS: Record<LLMTask, TaskModelConfig> = {
       prompt: "",
     },
   },
+  // pSEO content pipeline: Strategy → Generate → Validate → Correct
+  pseo_strategy: {
+    primary: {
+      provider: "anthropic",
+      model: MODEL_IDS.anthropic.haiku,
+      temperature: 0.4,
+      maxTokens: 4000,
+      prompt: "",
+    },
+    fallback: {
+      provider: "gemini",
+      model: MODEL_IDS.gemini.flash,
+      temperature: 0.4,
+      maxTokens: 4000,
+      prompt: "",
+    },
+    fallback2: {
+      provider: "openai",
+      model: MODEL_IDS.openai.mini,
+      temperature: 0.4,
+      maxTokens: 4000,
+      prompt: "",
+    },
+  },
+  pseo_generate: {
+    primary: {
+      provider: "anthropic",
+      model: MODEL_IDS.anthropic.haiku,
+      temperature: 0.4,
+      maxTokens: 6000,
+      prompt: "",
+    },
+    fallback: {
+      provider: "gemini",
+      model: MODEL_IDS.gemini.flash,
+      temperature: 0.4,
+      maxTokens: 6000,
+      prompt: "",
+    },
+    fallback2: {
+      provider: "openai",
+      model: MODEL_IDS.openai.mini,
+      temperature: 0.4,
+      maxTokens: 6000,
+      prompt: "",
+    },
+  },
+  pseo_validate: {
+    primary: {
+      provider: "gemini",
+      model: MODEL_IDS.gemini.flash,
+      temperature: 0.2,
+      maxTokens: 3000,
+      prompt: "",
+    },
+    fallback: {
+      provider: "anthropic",
+      model: MODEL_IDS.anthropic.haiku,
+      temperature: 0.2,
+      maxTokens: 3000,
+      prompt: "",
+    },
+    fallback2: {
+      provider: "openai",
+      model: MODEL_IDS.openai.mini,
+      temperature: 0.2,
+      maxTokens: 3000,
+      prompt: "",
+    },
+  },
+  pseo_correct: {
+    primary: {
+      provider: "openai",
+      model: MODEL_IDS.openai.mini,
+      temperature: 0.3,
+      maxTokens: 4000,
+      prompt: "",
+    },
+    fallback: {
+      provider: "anthropic",
+      model: MODEL_IDS.anthropic.haiku,
+      temperature: 0.3,
+      maxTokens: 4000,
+      prompt: "",
+    },
+    fallback2: {
+      provider: "gemini",
+      model: MODEL_IDS.gemini.flash,
+      temperature: 0.3,
+      maxTokens: 4000,
+      prompt: "",
+    },
+  },
 };
 
 export async function callLLMTask(
@@ -383,7 +481,30 @@ export async function callLLMTask(
     console.warn(
       `[LLM Router] Using fallback model for task "${opts.task}"`
     );
-    return await callLLM(fb);
+
+    try {
+      return await callLLM(fb);
+    } catch (err2) {
+      console.error(
+        `[LLM Router] Fallback model failed for task "${opts.task}"`,
+        err2
+      );
+      if (!config.fallback2) throw err2;
+
+      const fb2: LLMCallOptions = {
+        ...config.fallback2,
+        system: opts.system,
+        prompt: opts.prompt,
+        temperature: opts.temperatureOverride ?? config.fallback2.temperature,
+        maxTokens: opts.maxTokensOverride ?? config.fallback2.maxTokens,
+        expectJson: opts.expectJson,
+      };
+
+      console.warn(
+        `[LLM Router] Using fallback2 model for task "${opts.task}"`
+      );
+      return await callLLM(fb2);
+    }
   }
 }
 

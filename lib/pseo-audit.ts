@@ -1,6 +1,19 @@
-import { PseoAuditRequest, PseoAuditResponse, PseoPage, PseoPageType } from "./pseo-types";
+import {
+  PseoAuditRequest,
+  PseoAuditResponse,
+  PseoPage,
+  PseoPageType,
+  PageRecommendation,
+  AuditDrivenStrategy,
+} from "./pseo-types";
 import { fetchKeywordDataFromDataForSEO } from "./dataforseo-extended";
 import { addPageBriefs } from "./pseo-briefs";
+import {
+  extractContextFromAudit,
+  analyzeAuditForPseo,
+  categorizeRecommendations,
+} from "./pseo-audit-analyzer";
+import { batchGenerateContent } from "./pseo-content-pipeline";
 
 function normList(input?: string[] | string): string[] {
   if (!input) return [];
@@ -63,19 +76,6 @@ function parseGeographyToLocations(geography: string): { locations: string[]; mo
   return { locations: [], mode: "multi" };
 }
 
-const GEO_PRESETS: Record<string, string[]> = {
-  texas: ["Houston", "Dallas", "Austin", "San Antonio", "Fort Worth"],
-  "united states": ["Houston", "Dallas", "Austin", "Chicago", "New York", "Los Angeles", "Miami", "Denver", "Atlanta", "Phoenix"],
-  usa: ["Houston", "Dallas", "Austin", "Chicago", "New York", "Los Angeles", "Miami", "Denver", "Atlanta", "Phoenix"],
-};
-
-function deriveLocations(geography: string): string[] {
-  const key = geography.toLowerCase().trim();
-  if (GEO_PRESETS[key]) return GEO_PRESETS[key];
-  if (key.includes("texas")) return GEO_PRESETS["texas"];
-  if (key.includes("united states") || key.includes("usa")) return GEO_PRESETS["united states"];
-  return [];
-}
 
 const TEMPLATE_SECTIONS: Record<PseoPageType, string[]> = {
   service: ["H1", "Overview", "Who It's For", "Benefits", "Process", "FAQs", "CTA"],
@@ -133,11 +133,39 @@ function countByType(pages: PseoPage[]): Record<PseoPageType, number> {
 }
 
 export async function generatePseoAudit(req: PseoAuditRequest): Promise<PseoAuditResponse> {
-  const company = req.company_name.trim();
-  const industry = req.industry.trim();
-  const geo = req.geography.trim();
+  // Check if audit-driven strategy is enabled
+  const hasAudit = req.structuredAudit && !req.structuredAudit.parsingFallback;
+  const useAuditStrategy = req.useAuditDrivenStrategy && hasAudit;
 
-  const services = dedupe(normList(req.services));
+  // Variables for context
+  let company: string;
+  let industry: string;
+  let geo: string;
+  let services: string[];
+  let targetCustomer: string;
+  let websiteUrl: string;
+
+  // Extract context from audit or use manual inputs
+  if (useAuditStrategy && req.structuredAudit) {
+    const context = extractContextFromAudit(req.structuredAudit);
+    company = req.company_name?.trim() || context.company_name;
+    industry = req.industry?.trim() || context.industry;
+    geo = req.geography?.trim() || context.geography;
+    services = dedupe(normList(req.services)).length > 0
+      ? dedupe(normList(req.services))
+      : context.services;
+    targetCustomer = req.target_customer?.trim() || context.target_customer;
+    websiteUrl = req.website_url?.trim() || context.website_url;
+  } else {
+    // Original manual extraction
+    company = req.company_name?.trim() || "";
+    industry = req.industry?.trim() || "";
+    geo = req.geography?.trim() || "";
+    services = dedupe(normList(req.services));
+    targetCustomer = req.target_customer?.trim() || "";
+    websiteUrl = req.website_url?.trim() || "";
+  }
+
   const loanPrograms = dedupe((req.loan_programs ?? []).map(s => s.trim()).filter(Boolean));
   const assetClasses = dedupe((req.asset_classes ?? []).map(s => s.trim()).filter(Boolean));
   const useCases = dedupe((req.use_cases ?? []).map(s => s.trim()).filter(Boolean));
@@ -157,7 +185,53 @@ export async function generatePseoAudit(req: PseoAuditRequest): Promise<PseoAudi
     faq_base: "/faqs",
   };
 
-  const pages: PseoPage[] = [];
+  let pages: PseoPage[] = [];
+  let auditDrivenStrategy: AuditDrivenStrategy | undefined;
+
+  // AUDIT-DRIVEN MODE: Use LLM to analyze audit and recommend pages
+  if (useAuditStrategy && req.structuredAudit) {
+    const extractedContext = extractContextFromAudit(req.structuredAudit);
+
+    // Get LLM-driven page recommendations
+    const recommendations = await analyzeAuditForPseo({
+      structuredAudit: req.structuredAudit,
+      rawScan: req.rawScan,
+      keywordMetrics: req.keywordMetrics,
+    });
+
+    // Categorize recommendations
+    const categorized = categorizeRecommendations(recommendations);
+
+    // Convert recommendations to pages
+    pages = recommendations.map((rec) => convertRecommendationToPage(rec, url_conventions));
+
+    // Generate validated content for each page (in batches)
+    const contentMap = await batchGenerateContent(
+      recommendations,
+      req.structuredAudit,
+      extractedContext,
+      { concurrency: 3 }
+    );
+
+    // Attach generated content to pages
+    for (const page of pages) {
+      const slug = slugify(page.title);
+      const content = contentMap.get(slug);
+      if (content) {
+        page.generatedContent = content;
+      }
+    }
+
+    // Store strategy metadata
+    auditDrivenStrategy = {
+      extractedContext,
+      recommendations,
+      quickWinPages: categorized.quickWinPages,
+      aeoFocusedPages: categorized.aeoFocusedPages,
+    };
+
+  } else {
+    // MANUAL MODE: Original deterministic generation
 
   const defaultLoanPrograms = ["Bridge Loans","Construction Financing","Permanent Debt","Mezzanine Financing","Preferred Equity"];
   const defaultAssetClasses = ["Multifamily","Industrial","Office","Retail","Hospitality","Self Storage"];
@@ -236,6 +310,7 @@ export async function generatePseoAudit(req: PseoAuditRequest): Promise<PseoAudi
       )
     );
   }
+  } // End of else block (manual mode)
 
   const by_type = countByType(pages);
   const total_pages = pages.length;
@@ -372,10 +447,10 @@ export async function generatePseoAudit(req: PseoAuditRequest): Promise<PseoAudi
   return {
     meta: {
       company_name: company,
-      website_url: req.website_url,
+      website_url: websiteUrl,
       industry,
       geography: geo,
-      target_customer: req.target_customer,
+      target_customer: targetCustomer,
     },
     totals: { total_pages, by_type },
     url_conventions,
@@ -383,5 +458,44 @@ export async function generatePseoAudit(req: PseoAuditRequest): Promise<PseoAudi
     schema_recommendations,
     pages,
     markdown: enrichedMarkdown,
+    auditDrivenStrategy,
+  };
+}
+
+/**
+ * Convert a PageRecommendation to a PseoPage
+ */
+function convertRecommendationToPage(
+  rec: PageRecommendation,
+  urlConventions: Record<string, string>
+): PseoPage {
+  const basePaths: Record<PseoPageType, string> = {
+    service: urlConventions.service_base,
+    loan_program: urlConventions.loan_base,
+    asset_class: urlConventions.asset_class_base,
+    market: urlConventions.market_base,
+    use_case: urlConventions.use_case_base,
+    qualifier: urlConventions.qualify_base,
+    comparison: urlConventions.compare_base,
+    faq_hub: urlConventions.faq_base,
+  };
+
+  const path = `${basePaths[rec.pageType]}/${slugify(rec.title)}`;
+
+  return {
+    type: rec.pageType,
+    title: rec.title,
+    path,
+    primary_keyword: rec.targetKeywords[0] || rec.title.toLowerCase(),
+    secondary_keywords: rec.targetKeywords.slice(1),
+    template_sections: TEMPLATE_SECTIONS[rec.pageType],
+    schema_types: SCHEMA_TYPES[rec.pageType],
+    recommendation: {
+      rationale: rec.rationale,
+      priority: rec.priority,
+      expectedImpact: rec.expectedImpact,
+      sourceIssue: rec.sourceIssue,
+      sourceOpportunity: rec.sourceOpportunity,
+    },
   };
 }

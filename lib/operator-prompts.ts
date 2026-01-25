@@ -3,7 +3,7 @@
 
 import { PseoAuditRequest } from "./pseo-types";
 
-function clean(s: string) {
+function clean(s: string | undefined) {
   return String(s ?? "").trim();
 }
 

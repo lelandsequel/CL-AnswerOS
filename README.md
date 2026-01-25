@@ -1,323 +1,395 @@
-# 🧠 C&L Answer OS - Unified LLM-Powered SEO/AEO Audit Platform
+# Lelandos
 
-**The HNIC of SEO/AEO tools** - A comprehensive multi-LLM platform for website audits, content generation, keyword research, and lead generation.
+**SEO/AEO Audit Engine + Execution Mapper + pSEO Generator**
 
-## 🎯 Overview
+A production-grade platform for running comprehensive SEO and AEO (Answer Engine Optimization) audits, generating execution plans, and creating programmatic SEO campaigns.
 
-LelandOS is a Next.js 15.5.6 application that leverages multiple LLM providers (Anthropic, OpenAI, Google Gemini) with intelligent task-based routing, automatic fallbacks, and real-time data integration via DataForSEO APIs.
+## Architecture Overview
 
-### Key Features
-
-- **🔍 Website Audits** - Comprehensive SEO/AEO analysis across 5 SEO pillars with multi-stage Claude pipeline
-- **📊 Detailed Reports** - Download audits as TXT or Markdown with full analysis, roadmaps, and quick wins
-- **🔧 Fix Engine** - Generates concrete fix packs from audit results
-- **🎯 Keyword Suite** - Advanced keyword research with clustering and metrics
-- **📝 Content Generation** - Press releases, articles, landing pages, social content
-- **👥 Lead Generation** - Real business data via DataForSEO with AI scoring
-- **🎨 Report Generator** - Transform audits into operator-grade reports with Board Summary, Whiteboard Roast, Moneyboard
-- **💾 Supabase Integration** - Persistent storage for audits, clients, and assets
-
-## 🏗️ Architecture
-
-### Multi-LLM Router (`lib/llm.ts`)
-
-Centralized LLM management with task-based routing:
-
-```typescript
-// 19 predefined tasks with optimal model selection
-- audit_scan → Gemini 1.5 Flash
-- audit_analysis → Claude Sonnet (fallback: GPT-4o-mini)
-- lelandizer → GPT-4o-mini (fallback: Claude Sonnet)
-- lead_scoring → Claude Sonnet (fallback: GPT-4o-mini)
-- lead_light → GPT-4o-mini (fallback: Claude Haiku)
-- content_press_release → Claude Haiku
-- content_article → Claude Haiku (fallback: GPT-4o-mini)
-- content_landing → Claude Haiku (fallback: GPT-4o-mini)
-- content_social → Claude Haiku (fallback: GPT-4o-mini)
-- keyword_expand → Claude Haiku (fallback: Gemini)
-- keyword_suite → Gemini 1.5 Flash (fallback: Claude Sonnet)
-- utility_rewrite → GPT-4o-mini (fallback: Claude Haiku)
-- utility_json_fix → GPT-4o-mini (fallback: Claude Haiku)
-- sales_pitch_deck → Claude Sonnet (fallback: GPT-4o-mini)
-- sales_proposal → Claude Sonnet (fallback: GPT-4o-mini)
-- sales_roi_calc → Claude Haiku (fallback: GPT-4o-mini)
-- sales_outreach → Claude Haiku (fallback: GPT-4o-mini)
-- sales_emails → Claude Haiku (fallback: GPT-4o-mini)
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                           AUDIT ENGINE                                   │
+│  URL → DataForSEO Crawl → Pillar Analysis → DeepAuditResult             │
+│                                                                          │
+│  SEO Pillars: Technical | On-Page | Content | Authority | UX            │
+│  AEO Pillars: Entity | Schema | FAQ | Voice | AI Search                  │
+└─────────────────────────────┬───────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                       EXECUTION MAPPER                                   │
+│  DeepAuditResult → Phase Mapping → Dependencies → ExecutionPlan         │
+│                                                                          │
+│  Phases: Entity Foundation → Technical Hygiene → Content Structure      │
+│          → Answer Architecture → Performance → Authority Building       │
+└─────────────────────────────┬───────────────────────────────────────────┘
+                              │
+              ┌───────────────┼───────────────┐
+              ▼               ▼               ▼
+        Workflow Doc    Execution BBB    pSEO Generator
+        (human-read)    (Claude-ready)   (site generation)
 ```
 
-### API Routes
+## Features
 
-| Route | Purpose | LLM Task |
-|-------|---------|----------|
-| `/api/run-audit` | Website audit analysis (5 SEO pillars) | audit_analysis |
-| `/api/run-scan` | Raw website scan | audit_scan |
-| `/api/export-report` | Download audit as TXT or Markdown | N/A |
-| `/api/fix-engine` | Generate fix recommendations | audit_analysis |
-| `/api/keyword-suite` | Keyword research & clustering | keyword_suite |
-| `/api/keyword-research` | Keyword expansion | keyword_expand |
-| `/api/lead-generator` | Business lead discovery | lead_scoring |
-| `/api/content/generate` | Multi-format content creation | content_* |
-| `/api/press-release` | Press release generation | content_press_release |
-| `/api/lelandize` | Report Generator - Tone transformation | lelandizer |
+- **Deep SEO Audits** - Comprehensive 10-pillar analysis using DataForSEO
+- **Execution Planning** - Convert audits to phased, dependency-aware workflows
+- **pSEO Generation** - AI-driven programmatic SEO page generation
+- **Cross-Model Validation** - Triple-LLM pipeline for content quality
+- **Real Fixes** - Actual code, schema, and config files (not just recommendations)
+- **Client Management** - Track audits and assets per client
+- **Export Options** - PDF, Markdown, and JSON outputs
+- **Authentication** - API key auth + rate limiting in production
 
-## 🎨 Design System
+---
 
-**Theme:** Blue-Meth × Pablo (Dark Mode)
-- Background: `#03060B`
-- Primary: `#0A84FF` (Blue)
-- Effects: Glassmorphism with `backdrop-blur-xl`
-- Borders: `white/10` with `black/40` backgrounds
+## Quick Start
 
-## 🚀 Getting Started
-
-### Prerequisites
-
-- Node.js 18+
-- npm or yarn
-- Environment variables (see `.env.local.example`)
-
-### Installation
+### 1. Clone and Install
 
 ```bash
-# Install dependencies
+git clone <repo-url>
+cd lelandos
 npm install
-
-# Set up environment variables
-cp .env.local.example .env.local
-# Edit .env.local with your API keys
-
-# Run development server
-npm run dev
-
-# Open http://localhost:3000
 ```
 
-### Environment Variables
+### 2. Configure Environment
+
+```bash
+cp .env.example .env.local
+```
+
+Edit `.env.local`:
 
 ```env
-# Anthropic
-ANTHROPIC_API_KEY=sk-ant-...
+# Required: At least one LLM provider
+ANTHROPIC_API_KEY=your-key-here
 
-# OpenAI
-OPENAI_API_KEY=sk-...
+# Optional: Additional providers for fallback
+OPENAI_API_KEY=your-key-here
+GOOGLE_GEMINI_API_KEY=your-key-here
 
-# Google Gemini
-GOOGLE_API_KEY=...
+# Required for deep audits
+DATAFORSEO_LOGIN=your-login
+DATAFORSEO_PASSWORD=your-password
 
-# DataForSEO
-DATAFORSEO_LOGIN=...
-DATAFORSEO_PASSWORD=...
-
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=...
-NEXT_PUBLIC_SUPABASE_ANON_KEY=...
-SUPABASE_SERVICE_ROLE_KEY=...
+# Optional: API key for production auth
+API_KEY=your-secret-api-key
 ```
 
-## 📁 Project Structure
+### 3. Initialize Database
+
+```bash
+npm run db:push
+```
+
+### 4. Run Development Server
+
+```bash
+npm run dev
+```
+
+Visit `http://localhost:3000`
+
+---
+
+## API Reference
+
+### Authentication
+
+In production (when `API_KEY` is set), all API requests require authentication:
+
+```bash
+curl -X POST http://localhost:3000/api/deep-audit \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"url": "example.com"}'
+```
+
+In development, authentication is disabled.
+
+### Rate Limits
+
+| Route Type | Limit |
+|------------|-------|
+| Standard routes | 100 req/min |
+| Expensive routes (audits) | 10 req/min |
+
+### Core Endpoints
+
+#### Health Check
+```
+GET /api/health
+```
+Returns service status and configuration state. No auth required.
+
+---
+
+#### Deep Audit
+```
+POST /api/deep-audit
+```
+
+Run a comprehensive SEO/AEO audit using DataForSEO.
+
+**Request:**
+```json
+{
+  "url": "https://example.com",
+  "maxPages": 50,
+  "includeBacklinks": false
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "deepAudit": {
+    "overallScore": 65,
+    "seoScore": 72,
+    "aeoScore": 58,
+    "seo": {
+      "technical": { "score": 85, "status": "good", "issues": [...] },
+      "onPage": { "score": 60, "status": "needs-work", "issues": [...] }
+    },
+    "aeo": {
+      "schemaMarkup": { "score": 25, "status": "critical", "issues": [...] }
+    },
+    "actionPlan": {
+      "immediate": [...],
+      "shortTerm": [...],
+      "mediumTerm": [...],
+      "longTerm": [...]
+    }
+  }
+}
+```
+
+---
+
+#### Execution Plan
+```
+POST /api/execution-plan
+```
+
+Convert a deep audit into an execution plan.
+
+**Request:**
+```json
+{
+  "deepAudit": { /* DeepAuditResult */ },
+  "format": "full"
+}
+```
+
+**Formats:**
+- `full` - Complete JSON with phases, dependencies, artifacts
+- `workflow` - Human-readable markdown
+- `bbb` - Claude-ready execution block
+
+---
+
+#### pSEO Audit
+```
+POST /api/pseo-audit
+```
+
+Generate a programmatic SEO page inventory.
+
+**Request:**
+```json
+{
+  "company_name": "Acme Corp",
+  "website_url": "https://acme.com",
+  "industry": "Technology",
+  "services": ["Consulting", "Development"],
+  "useAuditDrivenStrategy": true,
+  "structuredAudit": { /* optional */ }
+}
+```
+
+---
+
+### Additional Endpoints
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/run-audit` | POST | LLM-based audit (lighter) |
+| `/api/run-scan` | POST | Raw website scan |
+| `/api/clients` | GET/POST | Client management |
+| `/api/client-assets` | GET/POST | Asset management |
+| `/api/keyword-suite` | POST | Keyword research |
+| `/api/content/generate` | POST | Content generation |
+| `/api/lelandize` | POST | Report generation |
+| `/api/export-report` | POST | Export as TXT/MD |
+
+---
+
+## Project Structure
 
 ```
 lelandos/
 ├── app/
-│   ├── api/                    # API routes
-│   │   ├── run-audit/
-│   │   ├── keyword-suite/
-│   │   ├── lead-generator/
-│   │   ├── content/generate/
+│   ├── api/
+│   │   ├── deep-audit/         # Deep audit (DataForSEO)
+│   │   ├── execution-plan/     # Execution mapper
+│   │   ├── pseo-audit/         # pSEO generation
+│   │   ├── health/             # Health check
+│   │   ├── clients/            # Client CRUD
 │   │   └── ...
-│   ├── audit/                  # Audit page
-│   ├── keywords/               # Keywords page
-│   ├── content/                # Content generation page
-│   ├── leads/                  # Lead generation page
-│   ├── layout.tsx              # Root layout
-│   └── page.tsx                # Home page
+│   ├── audit/                  # Audit UI
+│   ├── pseo/                   # pSEO UI
+│   └── ...
 ├── components/
-│   ├── Sidebar.tsx             # Navigation sidebar
-│   ├── AuditResult.tsx         # Audit results display
-│   ├── KeywordSuite.tsx        # Keyword research UI
-│   ├── LeadTable.tsx           # Lead results table
-│   └── ui/                     # Reusable UI components
+│   ├── ui/                     # Base components
+│   ├── DeepAuditPanel.tsx      # Deep audit display
+│   └── ...
 ├── lib/
-│   ├── llm.ts                  # Unified LLM router
-│   ├── types.ts                # TypeScript types
-│   ├── utils.ts                # Utility functions
-│   ├── reportGenerator.ts      # Report formatting (TXT/Markdown)
-│   ├── dataforseo.ts           # DataForSEO integration
-│   ├── dataforseo-leads.ts     # Lead generation API
-│   └── auditStore.ts           # Supabase audit storage
-├── public/                     # Static assets
-├── package.json
-├── tsconfig.json
-└── next.config.ts
+│   ├── audit-engine/           # Deep audit engine
+│   │   ├── types.ts
+│   │   ├── dataforseo-client.ts
+│   │   ├── analyzers/
+│   │   └── fix-generator.ts
+│   ├── execution-mapper/       # Execution planning
+│   │   ├── types.ts
+│   │   ├── phase-config.ts
+│   │   └── mapper.ts
+│   ├── auth.ts                 # Authentication
+│   ├── validation.ts           # Zod schemas
+│   ├── api-utils.ts            # API helpers
+│   ├── llm.ts                  # LLM router
+│   └── db.ts                   # Database
+├── middleware.ts               # Auth + rate limiting
+├── .env.example
+└── README.md
 ```
-
-## � Audit Structure
-
-### 5 SEO Pillars Analysis
-
-Every audit evaluates websites across:
-
-1. **Technical SEO** - Crawlability, indexability, site speed, mobile optimization
-2. **On-Page SEO** - Content quality, keyword optimization, structure, metadata
-3. **Off-Page SEO** - Backlinks, domain authority, brand mentions
-4. **User Experience** - Core Web Vitals, usability, engagement metrics
-5. **Content Strategy** - Relevance, depth, freshness, topical authority
-
-### Audit Output Includes
-
-- **Overview** - Domain health, current state, opportunity rating, raw score
-- **Core Issues** - Categorized by pillar with severity levels and business impact
-- **AEO Opportunities** - Answer Engine Optimization tactics with expected impact
-- **Content Playbook** - Positioning, messaging pillars, content clusters, target persona
-- **Quick Wins** - 48-hour actionable items with impact scores
-- **30/60/90 Roadmap** - Phased strategic initiatives
-- **Investment Outlook** - Budget recommendations and ROI projections
-
-### Report Export
-
-- **Download as TXT** - Plain text format for universal compatibility
-- **Download as Markdown** - Formatted markdown for styling and sharing
-- **Live Preview** - View full report in browser before downloading
-- **Client-Ready** - Professional formatting suitable for client presentations
-
-## �🔌 API Integration
-
-### LLM Providers
-
-**Multi-Provider Architecture with Intelligent Fallbacks:**
-
-- **Anthropic Claude** - Primary for audit analysis, content generation, lead scoring
-  - Claude Sonnet: Complex analysis and content creation
-  - Claude Haiku: Lightweight tasks and keyword expansion
-  
-- **OpenAI GPT** - Fallback and specialized tasks
-  - GPT-4.1 Instant: Audit analysis, content generation fallback
-  - GPT-4o-mini: Utility tasks (JSON fixing, rewriting)
-  
-- **Google Gemini** - Specialized for scanning and keyword research
-  - Gemini 2.0 Flash: Website scanning and keyword suite analysis
-  - Fallback support for keyword expansion
-
-**Features:**
-- Task-based model selection for optimal performance
-- Automatic provider fallbacks on failure
-- Configurable temperature and parameters per task
-- Consistent error handling across all providers
-
-### DataForSEO
-
-- **Website Scan:** Raw HTML analysis for SEO metrics
-- **Business Listings:** Real business data for lead generation
-- **Keyword Metrics:** Search volume, difficulty, trends
-- **Keyword Ideas:** Seed expansion and related keywords
-
-### Supabase
-
-- Audit history storage
-- User preferences and settings
-- Real-time updates
-- Asset and client data persistence
-
-## 🧪 Testing
-
-```bash
-# Run build
-npm run build
-
-# Check for TypeScript errors
-npm run type-check
-
-# Run linter
-npm run lint
-```
-
-## 📊 LLM Router Features
-
-### Intelligent Routing
-- Task-based model selection
-- Automatic provider fallbacks
-- Temperature & parameter overrides
-
-### JSON Parsing
-- `safeParseJsonFromText()` - Safe extraction with null fallback
-- `requireJsonFromText()` - Strict extraction with error handling
-
-### Error Handling
-- Consistent error patterns across providers
-- Automatic retry logic
-- Provider-agnostic interface
-
-## 🚢 Deployment
-
-### Vercel (Recommended)
-
-```bash
-# Push to GitHub
-git push origin main
-
-# Vercel auto-deploys on push
-```
-
-### Environment Setup
-
-1. Set all environment variables in Vercel dashboard
-2. Ensure API keys have appropriate permissions
-3. Test all LLM providers before production
-
-## 📝 Development Guidelines
-
-### Adding New LLM Tasks
-
-1. Add task type to `LLMTask` union in `lib/llm.ts`
-2. Define task configuration in `TASK_CONFIG`
-3. Create helper function (e.g., `runMyTaskLLM()`)
-4. Use in API routes
-
-### Creating New API Routes
-
-1. Create route file in `app/api/`
-2. Import LLM helpers from `lib/llm.ts`
-3. Use `callLLMTask()` or specific helpers
-4. Handle JSON parsing with `safeParseJsonFromText()`
-
-## 🐛 Troubleshooting
-
-### Large File Errors
-- Ensure `node_modules/` is in `.gitignore`
-- Don't commit `.next/` or build artifacts
-
-### API Rate Limits
-- Implement request queuing
-- Add exponential backoff
-- Monitor provider quotas
-
-### LLM Fallbacks Not Working
-- Verify all API keys are valid
-- Check provider status pages
-- Review error logs in terminal
-
-## 📚 Resources
-
-- [Next.js Documentation](https://nextjs.org/docs)
-- [Anthropic API](https://docs.anthropic.com)
-- [OpenAI API](https://platform.openai.com/docs)
-- [Google Gemini API](https://ai.google.dev)
-- [DataForSEO API](https://dataforseo.com/api)
-- [Supabase Documentation](https://supabase.com/docs)
-
-## 📄 License
-
-Proprietary - All rights reserved
-
-## 👤 Author
-
-Sok Pyeon - LelandOS Creator
 
 ---
 
+## Key Concepts
+
+### SEO Pillars (5)
+
+1. **Technical** - Crawlability, indexability, security, performance
+2. **On-Page** - Titles, metas, headings, images
+3. **Content** - Quality, freshness, structure
+4. **Authority** - Backlinks, domain authority
+5. **UX** - Mobile, Core Web Vitals
+
+### AEO Pillars (5)
+
+1. **Entity Definition** - Organization identity, Knowledge Panel
+2. **Schema Markup** - Structured data
+3. **FAQ Targeting** - Featured snippets
+4. **Voice Search** - Speakable schema
+5. **AI Search** - Citation readiness
+
+### Fix Types
+
+| Type | Description |
+|------|-------------|
+| **Mechanical** | Copy-paste code/config |
+| **Structural** | Architecture changes |
+| **Strategic** | Requires operator decisions |
+
+### Execution Phases
+
+1. Entity Foundation
+2. Technical Hygiene
+3. Content Structure
+4. Answer Architecture
+5. Performance Optimization
+6. Authority Building
+
+---
+
+## LLM Configuration
+
+Multi-provider architecture with automatic fallback:
+
+| Task | Primary | Fallback |
+|------|---------|----------|
+| Audit Analysis | Claude Sonnet | GPT-4o |
+| pSEO Strategy | Claude Haiku | Gemini Flash |
+| Content Generation | Claude Haiku | GPT-4o-mini |
+| Validation | Gemini Flash | Claude Haiku |
+
+Override models:
+```env
+ANTHROPIC_SONNET_MODEL=claude-sonnet-4-20250514
+OPENAI_GPT4_MODEL=gpt-4o
+```
+
+---
+
+## Security
+
+- **Authentication**: API key required in production
+- **Rate Limiting**: Per-route limits (100/min standard, 10/min expensive)
+- **Input Validation**: Zod schemas on all endpoints
+- **Middleware**: Next.js middleware for auth + rate limiting
+
+---
+
+## Development
+
+```bash
+# Type check
+npm run typecheck
+
+# Lint
+npm run lint
+
+# Database
+npm run db:push      # Apply schema
+npm run db:studio    # Open studio
+```
+
+---
+
+## Deployment
+
+### Vercel
+
+1. Connect repository
+2. Add environment variables
+3. Deploy
+
+### Docker
+
+```dockerfile
+FROM node:20-alpine
+WORKDIR /app
+COPY . .
+RUN npm ci && npm run build
+CMD ["npm", "start"]
+```
+
+---
+
+## Files Reference
+
+| File | Purpose |
+|------|---------|
+| `lib/audit-engine/` | Deep audit with DataForSEO |
+| `lib/execution-mapper/` | Audit → execution plan |
+| `lib/auth.ts` | Authentication utilities |
+| `lib/validation.ts` | Zod validation schemas |
+| `middleware.ts` | Auth + rate limiting |
+| `.env.example` | Environment template |
+
+---
+
+## Example Outputs
+
+See these files for example outputs:
+- `DEEP_AUDIT_EXAMPLE.md` - Full audit results
+- `EXECUTION_PLAN_EXAMPLE.md` - Workflow document
+- `EXECUTION_BBB_EXAMPLE.md` - Claude-ready block
+
+---
+
+Built by Leland (TJ) Jourdan II
+
 **Status:** Production Ready ✅
-**Build:** Passing ✅
-**TypeScript:** Strict Mode ✅
-**Report Export:** TXT & Markdown ✅
-**5 SEO Pillars:** Fully Implemented ✅
-**Last Updated:** January 2026
